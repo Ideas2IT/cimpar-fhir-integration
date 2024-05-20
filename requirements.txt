@@ -1,2 +1,7 @@
-aidbox @ git+https://github.com/Aidbox/aidbox-python@main
-python-dotenv==1.0.0
+fastapi==0.111.0
+
+pydantic~=2.0
+uvicorn~=0.29.0
+requests~=2.31.0
+python-dotenv~=1.0.1
+aidbox~=0.0.1
