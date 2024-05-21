@@ -1,7 +1,7 @@
 import logging
 
 from models.insurance_validation import InsuranceModel
-from aidbox_utils.insurance_client import InsuranceClient
+from controller.insurance_controller import InsuranceClient
 
 logger = logging.getLogger("log")
 
