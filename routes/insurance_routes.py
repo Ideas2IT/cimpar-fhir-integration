@@ -10,8 +10,8 @@ logger = logging.getLogger("log")
 
 @router.post('/insurance')
 async def insurance_route(ins_plan: InsuranceModel):
-    logger.info(f"Request Payload: {ins_plan}")
+    logger.info("Request Payload: %s" % ins_plan)
     response = InsuranceService.create_insurance(ins_plan)
-    logger.info(f"Request Payload: {response}")
+    logger.info("Response: %s" % response)
     return response
 

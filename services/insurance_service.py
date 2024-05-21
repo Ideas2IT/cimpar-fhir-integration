@@ -9,8 +9,8 @@ logger = logging.getLogger("log")
 class InsuranceService:
     @staticmethod
     def create_insurance(ins_plan: InsuranceModel):
-        logger.info(f"Payload:{ins_plan}")
+        logger.info("Payload: %s" % ins_plan)
         response = InsuranceClient.create(ins_plan)
-        logger.info(f"Response:{ins_plan}")
+        logger.info("Response: %s" % response)
         return response
 
