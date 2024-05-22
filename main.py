@@ -5,13 +5,14 @@ from logging.handlers import TimedRotatingFileHandler
 
 from config import Settings
 from config import Logs
-from routes import insurance_routes
+from routes import insurance_routes, patient_routes
 
 # Load settings
 settings = Settings()
 app = FastAPI()
 
 app.include_router(insurance_routes.router, prefix="/api", tags=["insurance"])
+app.include_router(patient_routes.router, prefix="/api", tags=["patient"])
 
 log_path = os.path.join(os.getcwd(), Logs.TAIL_PATH)
 simple_logger = logging.getLogger("log")
