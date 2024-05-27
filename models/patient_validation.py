@@ -9,11 +9,9 @@ class PatientModel(BaseModel):
     gender: str
     date_of_birth: str
     phone_number: str
-    alternate_number: Optional[str] = None
     city: str
     zip_code: str
     full_address: str
     state: str
     country: str
-
-    
+    email: str
