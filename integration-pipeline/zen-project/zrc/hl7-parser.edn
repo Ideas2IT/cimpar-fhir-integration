@@ -1,0 +1,18 @@
+{ns     hl7-parser
+ import #{aidbox aidbox.rest aidbox.rest.v1 hl7v2.config hl7v2.api}
+
+ message-in
+ {:zen/tags #{aidbox.rest/op}
+  :engine           hl7v2.api/in-op
+  :parser-config    hl7v2.config/default-config}
+
+ api
+ {:zen/tags #{aidbox.rest/api}
+  "hl7in" {"ADT" {:POST message-in}
+           "ORU" {:POST message-in}
+           "ORM" {:POST message-in}}}
+
+ server
+ {:zen/tags #{aidbox/service}
+  :engine   aidbox/http
+  :apis     #{api}}}

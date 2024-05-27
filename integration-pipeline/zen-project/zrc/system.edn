@@ -1,0 +1,18 @@
+{:ns system
+ import #{aidbox hl7-fhir-us-core hl7-parser}
+
+ admin-user-seed
+ {:zen/tags #{aidbox/service}
+  :engine   aidbox/seed-v2
+  :resources
+  {:User {:admin
+          {:password #env AIDBOX_ADMIN_PASSWORD}}
+
+   :AccessPolicy {:allow-admin-user
+                  {:engine "allow"
+                   :link   [{:resourceType "User" :id "admin"}]}}}}
+
+ box
+ {:zen/tags #{aidbox/system}
+  :services {:admin-user-seed admin-user-seed
+             :http hl7-parser/server}}}

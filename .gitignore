@@ -114,3 +114,14 @@ dmypy.json
 *.iml
 .idea
 .vscode/
+
+#integration pipeline
+integration-pipeline/.env
+integration-pipeline/pgdata
+integration-pipeline/zen-project/zen-packages/
+integration-pipeline/zen-project/.gitignore
+integration-pipeline/zen-project/.git
+
+
+
+
