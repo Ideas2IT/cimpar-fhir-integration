@@ -8,7 +8,7 @@ router = APIRouter()
 logger = logging.getLogger("log")
 
 
-@router.post('/patient')
+@router.post("/patient")
 async def patient_route(pat: PatientModel):
     logger.info(f"Request Payload: {pat}")
     response = PatientService.create_patient(pat)
@@ -32,7 +32,3 @@ async def get_all_patients():
 async def delete_patient(patient_id: str):
     logger.info(f"Deleting patient ID:{patient_id}")
     return PatientService.delete_patient_by_id(patient_id)
-
-
-
-
