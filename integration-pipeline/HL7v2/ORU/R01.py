@@ -4,6 +4,9 @@ from aidbox.base import (
     API,
     Reference
 )
+from aidbox.resource.patient import Patient
+from aidbox.resource.location import Location
+from aidbox.resource.practitioner import Practitioner
 
 from HL7v2.resources.observation import prepare_observation
 from HL7v2.resources.patient import prepare_patient
@@ -15,36 +18,47 @@ from HL7v2.resources.procedure import prepare_procedure
 from HL7v2.resources.condition import prepare_condition
 from HL7v2.resources.diagnosticreport import prepare_diagnostic_report
 
+
 def run(message):
     patient_data = message.get("patient_group")
-    observation_data = message.get("observation_requests")
+    order_data = message.get("order_group")
+    visit_data = message.get("visit")
     entry = []
     patient = prepare_patient(patient_data["patient"])
+
+    patient_url = "Patient"
+    if Patient.get({"id": patient.id}):
+        patient_url += f"/{patient.id}"
 
     if "patient" in patient_data:
         entry.append(
             {
                 "resource": patient.dumps(exclude_none=True, exclude_unset=True),
-                "request": {"method": "PUT", "url": "Patient"},
+                "request": {"method": "PUT", "url": patient_url},
             }
         )
 
-    if "visit" in patient_data:
-        locations, practitioners, encounter = prepare_encounters(patient_data, patient=patient)
-
+    if visit_data:
+        locations, practitioners, encounter = prepare_encounters(visit_data, patient=patient)
         for location in locations:
+            location_url = 'Location'
+            if Location.get({"id": location.id}):
+                location_url += f"/{location.id}"
             entry.append(
                 {
                     "resource": location.dumps(exclude_unset=True, exclude_none=True),
-                    "request": {"method": "PUT", "url": "Location"},
+                    "request": {"method": "PUT", "url": location_url},
                 }
             )
 
         for practitioner in practitioners:
+            practitioners_url = 'Practitioner'
+            if Practitioner.get({"id": practitioner.id}):
+                practitioners_url += f"/{practitioner.id}"
             entry.append(
                 {
                     "resource": practitioner.dumps(exclude_unset=True, exclude_none=True),
-                    "request": {"method": "PUT", "url": "Practitioner"},
+                    "request": {"method": "PUT", "url": practitioners_url},
                 }
             )
 
@@ -55,9 +69,9 @@ def run(message):
             }
         )
 
-    for order_group_data in patient_data["order_group"]:
-        if "order" in order_group_data:
-            main_diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(order_group_data["order"], patient, encounter=None, parent=None)
+    if order_data:
+        if "order" in order_data:
+            main_diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(order_data["order"], patient, encounter=None, parent=None)
 
             for practitioner_role in practitioner_roles:
                 entry.append({
@@ -76,7 +90,7 @@ def run(message):
                 "request": {"method": "PUT", "url": "DiagnosticReport/" + main_diagnostic_report.id}
             })
 
-        for observation_data in order_group_data["observations"]:
+        for observation_data in order_data.get("observations", []):
             observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent = None, specimen=None, encounter=None)
 
             entry.append({
@@ -96,7 +110,7 @@ def run(message):
                     "request": {"method": "PUT", "url": "PractitionerRole/" + practitioner_role.id}
                 })
 
-        for observation_request_data in order_group_data["observation_requests"]:
+        for observation_request_data in order_data.get("observation_requests", []):
             diagnostic_report, practitioner_roles, observations = prepare_diagnostic_report(observation_request_data, patient, encounter=encounter, parent=main_diagnostic_report)
 
             for practitioner_role in practitioner_roles:
@@ -143,3 +157,4 @@ def run(message):
     except requests.exceptions.RequestException as e:
         if e.response is not None:
             print(e.response.json())
+        raise Exception({"message": 'Failed', 'error': str(e)})

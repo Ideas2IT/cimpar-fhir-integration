@@ -24,8 +24,7 @@ async def request_wrapper(raw_data, action):
     try:
         parsed_data = await convert_message(raw_data.decode("utf-8"))
         action(parsed_data["parsed"]["parsed"])
-        response = {"message": "DONE"}
-        return response
+        return {"message": "DONE"}
     except Exception as e:
         response = json.dumps({'error': str(e)}).encode('utf-8')
         logger.error("Unable to add the record: %s" % response)

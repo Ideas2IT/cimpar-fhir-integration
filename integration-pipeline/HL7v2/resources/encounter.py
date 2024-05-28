@@ -133,7 +133,8 @@ def prepare_encounters(
                 lambda item: Location(
                     status=item["status"],
                     id=get_md5(
-                        [item.get("facility", ""), item.get("point_of_care", "")]
+                        [item.get("facility", ""), item.get("point_of_care", ""), item.get("room", ""),
+                         item.get("bed", "")]
                     ),
                     description = item.get("location_description", None)
                 ),

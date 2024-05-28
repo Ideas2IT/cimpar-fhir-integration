@@ -86,9 +86,9 @@ def prepare_patient(data):
         )
 
     if "identifier" in data:
-        patient.identifier = list(
-            map(lambda item: Identifier(**item), data["identifier"])
-        )
+        patient.identifier = [
+            Identifier(**item) for item in data["identifier"] if "system" in item
+        ]
 
     if "marital_status" in data:
         patient.maritalStatus = CodeableConcept(coding=[get_marital_status_code(data)])
@@ -110,30 +110,35 @@ def prepare_patient(data):
         patient.extension = []
 
     if "race" in data:
-        race_extension = Extension(
-            extension = list(
-                map(
-                    lambda race: Extension(
-                        url = "detailed",
-                        valueCoding = Coding(
-                            system = race["system"],
-                            code = race["code"],
-                            display = race["display"],
-                        )
-                    ),
-                    data["race"]
-                )
-            ),
+        race_data = [
+            race for race in data["race"]
+            if "code" in race and "system" in race and "display" in race
+        ]
+        if race_data:
+            race_extension = Extension(
+                extension = list(
+                    map(
+                        lambda race: Extension(
+                            url = "detailed",
+                            valueCoding = Coding(
+                                system = race.get("system"),
+                                code = race.get("code"),
+                                display = race.get("display"),
+                            )
+                        ),
+                        data["race"]
+                    )
+                ),
 
-            url = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
-        )
+                url = "http://hl7.org/fhir/us/core/StructureDefinition/us-core-race"
+            )
 
-        race_extension.extension.append(Extension(
-            url = "text",
-            valueString = race_extension.extension[0].valueCoding.display
-        ))
+            race_extension.extension.append(Extension(
+                url = "text",
+                valueString = race_extension.extension[0].valueCoding.display
+            ))
 
-        patient.extension.append(race_extension)
+            patient.extension.append(race_extension)
 
     if "ethnicity" in data:
         ethnicity_extension = Extension(
@@ -142,9 +147,9 @@ def prepare_patient(data):
                     lambda ethnicity: Extension(
                         url = "detailed",
                         valueCoding = Coding(
-                            system = ethnicity["system"],
-                            code = ethnicity["code"],
-                            display = ethnicity["display"],
+                            system = ethnicity.get("system"),
+                            code = ethnicity.get("code"),
+                            display = ethnicity.get("display"),
                         )
                     ),
                     data["ethnicity"]
