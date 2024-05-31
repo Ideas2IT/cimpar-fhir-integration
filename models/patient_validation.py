@@ -15,3 +15,5 @@ class PatientModel(BaseModel):
     state: str
     country: str
     email: str
+    height: str
+    weight: str

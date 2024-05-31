@@ -11,5 +11,4 @@ class Settings(BaseSettings):
     AIDBOX_CLIENT_USERNAME: str = os.getenv("AIDBOX_CLIENT_USERNAME")
     AIDBOX_CLIENT_PASSWORD: str = os.getenv("AIDBOX_CLIENT_PASSWORD")
 
-
 settings = Settings()

@@ -3,8 +3,8 @@ import os
 import logging
 from logging.handlers import TimedRotatingFileHandler
 
-from config import Settings
-from config import Logs
+from utils.settings import Settings
+from utils.config import Logs
 from routes import insurance_routes, patient_routes, encounter_routes, medication_routes
 
 # Load settings
