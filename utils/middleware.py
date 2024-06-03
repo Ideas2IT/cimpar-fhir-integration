@@ -7,6 +7,14 @@ trace_id_var = ContextVar('trace_id', default='N/A')
 session_id_var = ContextVar('session_id', default='N/A')
 
 
+# Define your allowed origins
+origins = [
+    "http://localhost",
+    "http://localhost:8000",
+    "http://localhost:8001"
+]
+
+
 async def add_trace_and_session_id(request: Request, call_next):
     trace_id = str(uuid.uuid4())
     session_id = request.headers.get('X-Session-ID', 'N/A')

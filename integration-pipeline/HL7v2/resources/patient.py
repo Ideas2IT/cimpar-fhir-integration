@@ -8,7 +8,7 @@ from aidbox.base import (
     CodeableConcept,
     Coding,
     Extension,
-    Meta,
+    Meta
 )
 
 from HL7v2 import get_resource_id, get_unique_patient_id
