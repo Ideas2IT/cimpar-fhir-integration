@@ -1,8 +1,6 @@
-from fastapi import Response, status, HTTPException, Request
+from fastapi import Response, status, HTTPException
 import logging
 import traceback
-from functools import wraps
-from aidbox.base import API
 
 from models.auth_validation import (
     UserModel, TokenModel,
@@ -10,7 +8,6 @@ from models.auth_validation import (
 )
 from services.aidbox_service import AidboxApi
 from HL7v2 import get_md5
-from utils.common_utils import decode_jwt_without_verification
 
 logger = logging.getLogger("log")
 
@@ -72,44 +69,4 @@ class AuthClient:
             logger.error(f"Unable to create a token: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(content=str(e), status_code=status.HTTP_400_BAD_REQUEST)
-
-    @staticmethod
-    def get_user(user_id: str, auth_token: str):
-        response = AidboxApi.api_do_request(method="GET", endpoint=f"/fhir/User/{user_id}", token=auth_token)
-        return response
-
-    @staticmethod
-    def get_permission(permission_id: str, auth_token: str):
-        response = AidboxApi.api_do_request(method="GET", endpoint=f"/fhir/CimparPermission/{permission_id}",
-                                            token=auth_token)
-        return response
-
-    @staticmethod
-    def has_permission(user_id: str, resource: str, action: str, auth_token:str):
-        permission_id = get_md5([user_id, "PERMISSION"])
-        permissions = AuthClient.get_permission(permission_id, auth_token)
-        for permission in permissions:
-            if (permission["resource"] == "*" or permission["resource"] == resource) and \
-                    (action in permission["actions"] or "*" in permission["actions"]):
-                return True
-        return False
-
-    @staticmethod
-    def permission_required(resource: str, action: str):
-        def decorator(func):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                request: Request = kwargs.get("request")
-                auth_token = request.headers.get("auth_token")
-                header, payload = decode_jwt_without_verification(auth_token)
-                user_id = payload.get("sub")
-                response = AuthClient.get_user(user_id, auth_token)
-                if response.status_code != 200:
-                    raise HTTPException(status_code=403, detail="Permission denied")
-                if not AuthClient.has_permission(user_id, resource, action, auth_token):
-                    raise HTTPException(status_code=403, detail="Permission denied")
-                return await func(*args, **kwargs)
-            return wrapper
-        return decorator
-
 

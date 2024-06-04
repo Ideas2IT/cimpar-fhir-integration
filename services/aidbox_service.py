@@ -92,10 +92,10 @@ class AidboxApi:
         return data
 
     @classmethod
-    def api_do_request(cls, endpoint, token: str, method="GET",  **kwargs):
-        token = f"Bearer {token}"
+    def api_do_request(cls, endpoint, token: str, method="GET"):
         url = f"{base}{endpoint}"
-        return requests.request(method, url, auth=token, **kwargs)
+        headers = {'authorization': token}
+        return requests.request(method, url, headers=headers)
 
     @staticmethod
     def api_open_request(endpoint, method="GET",  **kwargs):
