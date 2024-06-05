@@ -21,4 +21,8 @@ class InsuranceService:
     @staticmethod
     def update_insurance_by_patient_id(patient_id: str, updated_insurance: CoverageUpdateModel):
         return CoverageClient.update_by_patient_id(patient_id, updated_insurance)
+    
+    @staticmethod
+    def delete_insurance_by_patient_id(patient_id: str):
+        return CoverageClient.delete_by_patient_id(patient_id)
 

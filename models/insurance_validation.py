@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 
+
 class CoverageModel(BaseModel):
     status: str
     beneficiary_id: str

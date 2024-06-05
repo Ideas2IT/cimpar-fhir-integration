@@ -60,7 +60,7 @@ class MedicationClient:
             logger.error(f"Unable to create a medication request and statement: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=response_data, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to Creating Patient", status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -82,7 +82,7 @@ class MedicationClient:
             logger.error(f"Unable to get a medication data: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"No Medication data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: No Medication data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
             )
     
     @staticmethod
@@ -115,7 +115,7 @@ class MedicationClient:
             logger.error(f"Unable to create a medication request and statement: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"No medication found", status_code=status.HTTP_400_BAD_REQUEST
+                content={f"Error: Unable to Updating Medication"}, status_code=status.HTTP_400_BAD_REQUEST
             )
 
 

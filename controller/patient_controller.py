@@ -49,7 +49,7 @@ class PatientClient:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=response_data, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to Create patient", status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -66,7 +66,7 @@ class PatientClient:
             logger.error(f"Error retrieving patient: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content="Error retrieving patient",
+                content=f"Error: Unable to Error retrieving patient",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
@@ -84,7 +84,7 @@ class PatientClient:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content="Error retrieving patients",
+                content=f"Error: Unable to retrie patients",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
@@ -100,9 +100,9 @@ class PatientClient:
                 content="Patient not found", status_code=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
-            logger.error(f"Error deleting patient: {str(e)}")
+            logger.error(f"Error : Unable to delete patient: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content="Error deleting patient",
+                content="Error: Unable to delete patient",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )

@@ -1,6 +1,7 @@
 from typing import List
 from pydantic import BaseModel
 
+
 class Concept(BaseModel):
     code: str
     system: str
@@ -12,6 +13,8 @@ class MedicationCreateModel(BaseModel):
     request_approved: bool
     statement_approved: bool
     patient_id: str
+    family_medications: str
+    family_status: str
 
 class MedicationUpdateModel(BaseModel):
     request: List[Concept]
