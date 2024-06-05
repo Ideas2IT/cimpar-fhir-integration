@@ -23,7 +23,11 @@ from routes import (insurance_routes, integration_pipeline_router, authenticatio
 
 # Load settings
 settings = Settings()
-app = FastAPI()
+
+app = FastAPI(docs_url="/documentation")
+if os.environ.get("ENVIRONMENT").upper() == "PRODUCTION":
+    app = FastAPI(docs_url=None)
+
 
 # Add the middleware
 app.middleware("http")(add_trace_and_session_id)
@@ -39,12 +43,12 @@ app.add_middleware(
 app.state.logger = simple_logger
 
 # Add the Router
-app.include_router(insurance_routes.router, prefix="/api", tags=["insurance"])
-app.include_router(insurance_routes.router, prefix="/api", tags=["insurance"])
-app.include_router(patient_routes.router, prefix="/api", tags=["patient"])
-app.include_router(encounter_routes.router, prefix="/api", tags=["encounter"])
-app.include_router(medication_routes.router, prefix="/api", tags=["medication"])
-app.include_router(authentication_router.router, prefix="/api", tags=["authentication"])
+app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
+app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
+app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
+app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
+app.include_router(authentication_router.router, prefix="/api", tags=["AUTHENTICATION"])
+app.include_router(integration_pipeline_router.router, prefix="/HL7v2", tags=["AIDBOX_INTEGRATION"])
 
 
 log_path = os.path.join(os.getcwd(), Logs.TAIL_PATH)
@@ -66,12 +70,13 @@ app.state.logger = simple_logger
 
 
 def custom_openapi():
+    env_name = os.environ.get("APP_DOC_ENVIRONMENT")
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title="Your API Title",
+        title=env_name,
         version="1.0.0",
-        description="Your API description",
+        description="Cimpar development API documentation for integrating and testing in the development environment",
         routes=app.routes,
     )
     openapi_schema["components"]["securitySchemes"] = {
@@ -84,6 +89,7 @@ def custom_openapi():
     openapi_schema["security"] = [{"BearerAuth": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
+
 
 app.openapi = custom_openapi
 
