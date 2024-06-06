@@ -4,3 +4,4 @@ requests~=2.31.0
 python-dotenv~=1.0.1
 pydantic~=2.0
 pydantic-settings==2.2.1
+git+https://github.com/Aidbox/aidbox-python

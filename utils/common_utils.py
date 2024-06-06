@@ -16,7 +16,6 @@ def decode_jwt_without_verification(token):
     if len(parts) != 3:
         raise ValueError("Invalid JWT token")
 
-    header = parts[0]
     payload = parts[1]
 
     # Base64 decode the header and payload
@@ -69,7 +68,9 @@ def permission_required(resource: str, action: str):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
-            auth_token = request.headers.get("authorization")
+            auth_token = request.headers.get("Authorization")
+            if not auth_token:
+                raise HTTPException(status_code=403, detail="Permission denied: Missing auth_token")
             payload = decode_jwt_without_verification(auth_token)
             user_id = payload.get("sub")
             if not get_user(user_id, auth_token):
