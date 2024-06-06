@@ -2,9 +2,12 @@ import logging
 import traceback
 from fastapi import Response, status
 
+from aidbox.base import API
 from aidbox.base import Period,  CodeableConcept, Reference, Coding
 from aidbox.resource.encounter import Encounter, Encounter_Participant, Encounter_Location
-from models.encounter_validation import EncounterModel
+
+from constants import PATIENT_REFERENCE, CLASS_DISPLAY
+from models.encounter_validation import EncounterModel, EncounterUpdateModel
 
 logger = logging.getLogger("log")
 
@@ -15,8 +18,9 @@ class EncounterClient:
         try:
             encounter = Encounter(
                 status=enc.status,
-                class_=Coding(code=enc.class_, display="inpatient encounter"),
+                class_=Coding(code=enc.class_code, display=CLASS_DISPLAY),
                 period=Period(start=enc.admission_date, end=enc.discharge_date),
+                subject=Reference(reference=f"{PATIENT_REFERENCE}/{enc.patient_id}"),
                 reasonCode=[CodeableConcept(text=enc.reason)],
                 participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))], 
                 location=[Encounter_Location(location=Reference(display=enc.location))],
@@ -29,50 +33,61 @@ class EncounterClient:
             logger.error(f"Error creating encounters {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=response_data, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to Creating Encounter", status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
-    def get_encounter_by_id(encounter_id: str):
+    def get_encounter_by_id(patient_id: str):
         try:
-            encounter = Encounter.from_id(encounter_id)
+            encounter = API.do_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             if encounter:
-                logger.info(f"Encounter Found: {encounter_id}")
-                return encounter
+                logger.info(f"Encounter Found: {patient_id}")
+                return encounter.json()
             return Response(
-                content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
+                content={"Error retrieving encounters for {patient_id}"}, status_code=status.HTTP_404_NOT_FOUND
             )
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content={"Error retrieving encounters"}, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to get encounter", status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
-    def delete_encounter(encounter_id: str):
+    def update_by_patient_id(patient_id: str , enc: EncounterUpdateModel):
         try:
-            encounter = Encounter(id=encounter_id)
-            encounter.delete()
-            return {"deleted": True}
+            encounter = Encounter(
+                id=enc.id,
+                status=enc.status,
+                class_=Coding(code=enc.class_code, display=CLASS_DISPLAY),
+                period=Period(start=enc.admission_date, end=enc.discharge_date),
+                subject=Reference(reference=f"{PATIENT_REFERENCE}/{enc.patient_id}"),
+                reasonCode=[CodeableConcept(text=enc.reason)],
+                participant=[Encounter_Participant(individual=Reference(display=enc.primary_care_team))], 
+                location=[Encounter_Location(location=Reference(display=enc.location))],
+            )
+            encounter.save()
+            logger.info(f"Updated Successfully in DB: {patient_id}")
+            return {"updated": True, "encounter": encounter.id}
+        except Exception as e:
+            logger.error(f"Unable to update encounter: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: Unable to update encounter", status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+    @staticmethod
+    def delete_by_patient_id(patient_id: str):
+        try:
+            encounter = API.do_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            return {"deleted": True, "encounter": encounter.id}
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content={"error": "Unable to delete encounter"}, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to delete encounter", status_code=status.HTTP_400_BAD_REQUEST
             )
         
-    @staticmethod   
-    def get_all_encounters():
-        try:
-            encounters = Encounter.get()
-            if encounters:
-                logger.info(f"Encounters Found: {len(encounters)}")
-                return encounters
-            return Response(content={"Encounters not found"}, status_code=status.HTTP_404_NOT_FOUND)
-        except Exception as e:
-            logger.error(f"Error retrieving encounters: {str(e)}")
-            logger.error(traceback.format_exc())
-            return Response(
-                content={"Error retrieving encounters"}, status_code=status.HTTP_400_BAD_REQUEST
-            )
+
+
+

@@ -46,7 +46,7 @@ class CoverageClient:
             logger.error(f"Unable to create a insurance_plan: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=response_data, status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to Creating Insurance", status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -64,7 +64,7 @@ class CoverageClient:
             logger.error(f"Unable to get coverage data: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"No Coverage data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: No Coverage data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -93,5 +93,17 @@ class CoverageClient:
             logger.error(f"Unable to update coverage data: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"Unable to update coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to update coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+    @staticmethod
+    def delete_by_patient_id(patient_id: str):
+        try:
+            response_coverage = API.do_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            return {"deleted": True, "patient_id": patient_id}
+        except Exception as e:
+            logger.error(f"Unable to delete coverage data: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: Unable to delete coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
             )

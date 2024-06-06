@@ -1,6 +1,6 @@
 import logging
 
-from models.encounter_validation import EncounterModel
+from models.encounter_validation import EncounterModel, EncounterUpdateModel
 from controller.encounter_controller import EncounterClient
 
 logger = logging.getLogger("log")
@@ -15,16 +15,21 @@ class EncounterService:
         return response
 
     @staticmethod
-    def get_encounter_by_id(encounter_id: str):
-        logger.info(f"Encounter ID:{encounter_id}")
-        return EncounterClient.get_encounter_by_id(encounter_id)
-
+    def get_encounter_by_id(patient_id: str):
+        logger.info(f"Encounter ID:{patient_id}")
+        return EncounterClient.get_encounter_by_id(patient_id)
+    
     @staticmethod
-    def get_all_encounters():
-        logger.info("Fetching all encounters")
-        return EncounterClient.get_all_encounters()
+    def update_encounter_by_patient_id(patient_id: str, updated_encounter: EncounterUpdateModel):
+        logger.info(f"Updating encounter for patient with ID: {patient_id}")
+        response = EncounterClient.update_by_patient_id(patient_id, updated_encounter)
+        logger.info(f"Response: {response}")
+        return response
 
+    
     @staticmethod
-    def delete_encounter_by_id(encounter_id: str):
-        logger.info(f"Deleting encounter ID:{encounter_id}")
-        return EncounterClient.delete_encounter_by_id(encounter_id)
+    def delete_encounter_by_patient_id(patient_id: str):
+        logger.info(f"Deleting encounter for patient with ID: {patient_id}")
+        response = EncounterClient.delete_by_patient_id(patient_id)
+        logger.info(f"Response: {response}")
+        return response
