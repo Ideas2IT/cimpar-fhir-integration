@@ -2,18 +2,19 @@ import logging
 from fastapi import APIRouter, Request
 
 from models.patient_validation import PatientModel
-from services.patient_service import PatientService
 from utils.common_utils import permission_required
+from models.patient_validation import PatientModel, PatientUpdateModel
+from controller.patient_controller import PatientClient
+
 
 router = APIRouter()
 logger = logging.getLogger("log")
-
 
 @router.post("/patient")
 @permission_required("PATIENT", "WRITE")
 async def patient_route(pat: PatientModel, request: Request):
     logger.info(f"Request Payload: {pat}")
-    response = PatientService.create_patient(pat)
+    response = PatientClient.create_patient(pat)
     logger.info(f"Request Payload: {response}")
     return response
 
@@ -22,18 +23,23 @@ async def patient_route(pat: PatientModel, request: Request):
 @permission_required("PATIENT", "READ")
 async def get_patient(patient_id: str, request: Request):
     logger.info(f"Patient ID:{patient_id}")
-    return PatientService.get_patient_by_id(patient_id)
+    return PatientClient.get_patient_by_id(patient_id)
 
 
 @router.get("/patients")
 @permission_required("PATIENT", "READ")
 async def get_all_patients(request: Request):
     logger.info("Fetching all patients")
-    return PatientService.get_all_patients()
+    return PatientClient.get_all_patients()
+
+@router.put("/patients/{patient_id}")
+async def update_patient(patient_id: str, pat: PatientUpdateModel):
+    logger.info(f"Updating patient ID:{patient_id}")
+    return PatientClient.update_patient_by_id(patient_id, pat)
 
 
 @router.delete("/patients/{patient_id}")
 @permission_required("PATIENT", "DELETE")
 async def delete_patient(patient_id: str, request: Request):
     logger.info(f"Deleting patient ID:{patient_id}")
-    return PatientService.delete_patient_by_id(patient_id)
+    return PatientClient.delete_patient_by_id(patient_id)

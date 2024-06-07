@@ -6,14 +6,14 @@ from aidbox.base import HumanName, Address, ContactPoint
 from aidbox.resource.patient import Patient, Patient_Contact
 
 from constants import PHONE_SYSTEM, EMAIL_SYSTEM
-from models.patient_validation import PatientModel
+from models.patient_validation import PatientModel, PatientUpdateModel
 
 logger = logging.getLogger("log")
 
 
 class PatientClient:
     @staticmethod
-    def create(pat: PatientModel):
+    def create_patient(pat: PatientModel):
         try:
             patient = Patient(
                 name=[
@@ -86,6 +86,47 @@ class PatientClient:
             return Response(
                 content=f"Error: Unable to retrie patients",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+        
+    @staticmethod
+    def update_patient_by_id(patient_id , pat: PatientUpdateModel):
+        try:
+            patient = Patient(
+                id=pat.patient_id,
+                name=[
+                    HumanName(
+                        family=pat.last_name, given=[pat.first_name, pat.middle_name]
+                    )
+                ],
+                gender=pat.gender,
+                birthDate=pat.date_of_birth,
+                contact=[
+                    Patient_Contact(
+                        telecom=[
+                            ContactPoint(system=PHONE_SYSTEM, value=pat.phone_number),
+                            ContactPoint(system=EMAIL_SYSTEM, value=pat.email),
+                        ]
+                    )
+                ],
+                address=[
+                    Address(
+                        city=pat.city,
+                        postalCode=pat.zip_code,
+                        text=pat.full_address,
+                        state=pat.state,
+                        country=pat.country,
+                    )
+                ],
+            )
+            patient.save()
+            response_data = {"id": patient_id, "Updated": True}
+            logger.info(f"Added Successfully in DB: {response_data}")
+            return response_data
+        except Exception as e:
+            logger.error(f"Unable to create a patient: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: Unable to Create patient", status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod

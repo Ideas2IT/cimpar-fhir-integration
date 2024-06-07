@@ -14,7 +14,7 @@ logger = logging.getLogger("log")
 
 class EncounterClient:
     @staticmethod
-    def create(enc: EncounterModel):
+    def create_encounter(enc: EncounterModel):
         try:
             encounter = Encounter(
                 status=enc.status,
@@ -75,6 +75,24 @@ class EncounterClient:
             return Response(
                 content=f"Error: Unable to update encounter", status_code=status.HTTP_400_BAD_REQUEST
             )
+    
+    @staticmethod
+    def get_all_encounters():
+        try:
+            encounters = API.do_request(method = "GET", endpoint= f"/fhir/Encounter")
+            if encounters:
+                logger.info(f"Encounters Found")
+                return encounters.json()
+            return Response(
+                content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving encounters: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: Unable to get encounters", status_code=status.HTTP_400_BAD_REQUEST
+            )
+
 
     @staticmethod
     def delete_by_patient_id(patient_id: str):

@@ -14,7 +14,7 @@ logger = logging.getLogger("log")
 
 class CoverageClient:
     @staticmethod
-    def create(coverage: CoverageModel):
+    def create_coverage(coverage: CoverageModel):
         try:
             response_coverage = API.do_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
             existing_coverages = response_coverage.json() if response_coverage else {}
