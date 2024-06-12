@@ -39,7 +39,7 @@ class EncounterClient:
     @staticmethod
     def get_encounter_by_id(patient_id: str):
         try:
-            encounter = API.do_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = API.make_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             if encounter:
                 logger.info(f"Encounter Found: {patient_id}")
                 return encounter.json()
@@ -79,10 +79,10 @@ class EncounterClient:
     @staticmethod
     def get_all_encounters():
         try:
-            encounters = API.do_request(method = "GET", endpoint= f"/fhir/Encounter")
+            encounters = Encounter.get()
             if encounters:
-                logger.info(f"Encounters Found")
-                return encounters.json()
+                logger.info(f"Encounters Found {len(encounters)}")
+                return encounters
             return Response(
                 content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
             )
@@ -97,7 +97,7 @@ class EncounterClient:
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            encounter = API.do_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = API.make_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             return {"deleted": True, "encounter": encounter.id}
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")

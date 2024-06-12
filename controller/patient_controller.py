@@ -89,7 +89,7 @@ class PatientClient:
             )
         
     @staticmethod
-    def update_patient_by_id(patient_id , pat: PatientUpdateModel):
+    def update_patient_by_id(pat: PatientUpdateModel):
         try:
             patient = Patient(
                 id=pat.patient_id,
@@ -119,7 +119,7 @@ class PatientClient:
                 ],
             )
             patient.save()
-            response_data = {"id": patient_id, "Updated": True}
+            response_data = {"id": patient.id, "Updated": True}
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
         except Exception as e:

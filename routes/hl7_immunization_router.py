@@ -16,11 +16,11 @@ async def vx04_route(request: Request):
     return response
 
 @router.get("/immunization/{patient_id}")
-def get_immunizations_by_patient_id(patient_id: str):
+async def get_immunizations_by_patient_id(patient_id: str):
     logger.info(f"Patient ID: {patient_id}")
     return HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
 
 @router.get("/immunization")
-def get_all_immunizations():
+async def get_all_immunizations():
     logger.info("Get all immunizations")
     return HL7ImmunizationClient.get_all_immunizations()

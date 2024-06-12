@@ -5,6 +5,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from aidbox.base import API
+from aidbox.resource.immunization import Immunization
+
 from utils.settings import settings
 from models.hl7_immunization_validation import VXO4Model
 
@@ -34,7 +36,7 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_immunizations_by_patient_id(patient_id: str):
         try:
-            response_immunization = API.do_request(method = "GET", endpoint= f"/fhir/Immunization/?patient=Patient/{patient_id}")
+            response_immunization = API.make_request(method = "GET", endpoint= f"/fhir/Immunization/?patient=Patient/{patient_id}")
 
             if not response_immunization:
                 return Response(status_code=404, content="Immunizations not found")
@@ -50,11 +52,10 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_all_immunizations():
         try:
-            response_immunization = API.do_request(method = "GET", endpoint= "/fhir/Immunization")
+            response_immunization = Immunization.get()
             if not response_immunization:
                 return Response(status_code=404, content="Immunizations not found")
-            immunizations = response_immunization.json() 
-            return {"immunizations": immunizations}
+            return {"immunizations": response_immunization}
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
             logger.error(traceback.format_exc())

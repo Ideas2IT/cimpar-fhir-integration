@@ -30,7 +30,7 @@ async def get_encounter(encounter_id: str, request: Request):
 
 @router.get("/encounter")
 @permission_required("ENCOUNTER", "READ")
-async def get_all_encounters():
+async def get_all_encounters(request: Request):
     logger.info("Fetching all encounters")
     return EncounterClient.get_all_encounters()
 
