@@ -6,7 +6,7 @@ import json
 
 from HL7v2.ORU import R01
 from HL7v2.VXU import V04
-
+from controller.hl7_immunization_controller import HL7ImmunizationClient
 
 router = APIRouter()
 logger = logging.getLogger("log")
@@ -47,3 +47,14 @@ async def hl7v2_vxu_v04(request: Request, raw_data: str =Body(..., media_type="t
     logger.info("raw_data: %s" % raw_data)
     response = await request_wrapper(raw_data, V04.run)
     return response
+
+@router.get("/immunization/{patient_id}")
+async def get_immunizations_by_patient_id(patient_id: str):
+    logger.info(f"Patient ID: {patient_id}")
+    return HL7ImmunizationClient.get_immunizations_by_patient_id(patient_id)
+
+
+@router.get("/immunization")
+async def get_all_immunizations():
+    logger.info("Get all immunizations")
+    return HL7ImmunizationClient.get_all_immunizations()
