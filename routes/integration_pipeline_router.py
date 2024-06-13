@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Response, status
+from fastapi import APIRouter, Request, Response, status, Body
 import logging
 from aidbox.base import API
 import traceback
@@ -13,7 +13,7 @@ logger = logging.getLogger("log")
 
 
 async def convert_message(message):
-    response = API.do_request(
+    response = API.make_request(
         endpoint="/hl7in/ADT", method="POST", json={"message": message}
     )
     response.raise_for_status()
@@ -33,14 +33,14 @@ async def request_wrapper(raw_data, action):
 
 
 @router.post("/ORU_R01")
-async def hl7v2_oru_r01(request: Request):
+async def hl7v2_oru_r01(request: Request, raw_data: str =Body(..., media_type="text/plain")):
     raw_data = await request.body()
     logger.info("raw_data: %s" % raw_data)
     return await request_wrapper(raw_data, R01.run)
 
 
 @router.post("/VXU_V04")
-async def hl7v2_vxu_v04(request: Request):
+async def hl7v2_vxu_v04(request: Request, raw_data: str =Body(..., media_type="text/plain")):
     raw_data = await request.body()
     logger.info("raw_data: %s" % raw_data)
     response = await request_wrapper(raw_data, V04.run)

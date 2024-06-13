@@ -127,8 +127,10 @@ def run(message):
 
             for observation_data in observation_request_data.get("observations", []):
                 observation, organizations, practitioner_roles = prepare_observation(observation_data, patient, parent = None, specimen=None, encounter=encounter)
-
-                diagnostic_report.result.append(Reference(reference="Observation/" + observation.id))
+                if diagnostic_report.result:
+                    diagnostic_report.result.append(Reference(reference="Observation/" + observation.id))
+                else:
+                    diagnostic_report.result = [Reference(reference="Observation/" + observation.id)]
 
                 entry.append({
                     "resource": observation.dumps(exclude_unset=True, exclude_none=True),

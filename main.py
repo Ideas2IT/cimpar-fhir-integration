@@ -1,4 +1,5 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 import sys
@@ -18,18 +19,14 @@ integration_pipeline_path = join(root_path, 'integration-pipeline')
 sys.path.insert(0, integration_pipeline_path)
 
 from utils.middleware import add_trace_and_session_id, origins
-#from utils.settings import Settings
 from utils.logging_config import simple_logger
 from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, authentication_router, patient_routes,
                     encounter_routes, medication_routes, condition_allergy_routes, hl7_immunization_router)
 
 # Load settings
-#settings = Settings()
+app = FastAPI(root_path="/api", docs_url=None)
 
-app = FastAPI(docs_url="/api/documentation")
-if os.environ.get("ENVIRONMENT").upper() == "PRODUCTION":
-    app = FastAPI(docs_url=None)
 
 # Add the middleware
 app.middleware("http")(add_trace_and_session_id)
@@ -45,14 +42,25 @@ app.add_middleware(
 app.state.logger = simple_logger
 
 # Add the Router
-app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
-app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
-app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
-app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
-app.include_router(hl7_immunization_router.router, prefix="/api", tags=["IMMUNIZATION"])
-app.include_router(authentication_router.router, prefix="/api", tags=["AUTHENTICATION"])
-app.include_router(condition_allergy_routes.router, prefix="/api", tags=["ALLERGY_CONDITION"])
-app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
+app.include_router(insurance_routes.router, tags=["INSURANCE"])
+app.include_router(patient_routes.router, tags=["PATIENT"])
+app.include_router(encounter_routes.router, tags=["ENCOUNTER"])
+app.include_router(medication_routes.router, tags=["MEDICATION"])
+app.include_router(hl7_immunization_router.router, tags=["IMMUNIZATION"])
+app.include_router(authentication_router.router, tags=["AUTHENTICATION"])
+app.include_router(condition_allergy_routes.router, tags=["ALLERGY_CONDITION"])
+app.include_router(integration_pipeline_router.router, prefix="/HL7v2", tags=["AIDBOX_INTEGRATION"])
+
+
+@app.get("/documentation", include_in_schema=False)
+async def get_documentation(request: Request):
+    if os.environ.get("ENVIRONMENT").upper() != "PRODUCTION":
+        return get_swagger_ui_html(openapi_url=request.scope.get("root_path") + "/openapi.json",
+                               title=os.environ.get("APP_DOC_ENVIRONMENT"))
+    else:
+        return Response(
+            content=f"Production Environment documentation is disabled"
+        )
 
 
 log_path = os.path.join(os.getcwd(), Logs.TAIL_PATH)
@@ -74,11 +82,10 @@ app.state.logger = simple_logger
 
 
 def custom_openapi():
-    env_name = os.environ.get("APP_DOC_ENVIRONMENT")
     if app.openapi_schema:
         return app.openapi_schema
     openapi_schema = get_openapi(
-        title=env_name,
+        title=os.environ.get("APP_DOC_ENVIRONMENT"),
         version="1.0.0",
         description="Cimpar development API documentation for integrating and testing in the development environment",
         routes=app.routes,

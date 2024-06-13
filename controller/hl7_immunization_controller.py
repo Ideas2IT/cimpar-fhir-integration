@@ -3,6 +3,7 @@ import logging
 import traceback
 import requests
 from requests.auth import HTTPBasicAuth
+import os
 
 from aidbox.base import API
 from aidbox.resource.immunization import Immunization
@@ -16,8 +17,9 @@ logger = logging.getLogger("log")
 class HL7ImmunizationClient:
 
     def __init__(self):
-        self.base_url = "http://localhost:8888"
-        self.token = requests.auth.HTTPBasicAuth("demo", "demosecret")
+        self.base_url = os.environ.get("AIDBOX_URL")
+        self.token = requests.auth.HTTPBasicAuth(os.environ.get("AIDBOX_CLIENT_USERNAME"),
+                                                 os.environ.get("AIDBOX_CLIENT_PASSWORD"))
 
     def create_immunization(self, vx04_content):
         try:
