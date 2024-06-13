@@ -14,7 +14,7 @@ logger = logging.getLogger("log")
 
 class EncounterClient:
     @staticmethod
-    def create(enc: EncounterModel):
+    def create_encounter(enc: EncounterModel):
         try:
             encounter = Encounter(
                 status=enc.status,
@@ -39,7 +39,7 @@ class EncounterClient:
     @staticmethod
     def get_encounter_by_id(patient_id: str):
         try:
-            encounter = API.do_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = API.make_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             if encounter:
                 logger.info(f"Encounter Found: {patient_id}")
                 return encounter.json()
@@ -75,11 +75,29 @@ class EncounterClient:
             return Response(
                 content=f"Error: Unable to update encounter", status_code=status.HTTP_400_BAD_REQUEST
             )
+    
+    @staticmethod
+    def get_all_encounters():
+        try:
+            encounters = Encounter.get()
+            if encounters:
+                logger.info(f"Encounters Found {len(encounters)}")
+                return encounters
+            return Response(
+                content={"Error retrieving encounters"}, status_code=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"Error retrieving encounters: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: Unable to get encounters", status_code=status.HTTP_400_BAD_REQUEST
+            )
+
 
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            encounter = API.do_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = API.make_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             return {"deleted": True, "encounter": encounter.id}
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")

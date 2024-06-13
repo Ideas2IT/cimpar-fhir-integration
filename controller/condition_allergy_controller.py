@@ -81,8 +81,8 @@ class ConditionClient:
     @staticmethod
     def get_condition_by_patient_id(patient_id: str):
         try:
-            response_condition = API.do_request(method = "GET", endpoint= f"/fhir/Condition/?subject=Patient/{patient_id}")
-            response_allergy = API.do_request(method = "GET", endpoint= f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
+            response_condition = API.make_request(method = "GET", endpoint= f"/fhir/Condition/?subject=Patient/{patient_id}")
+            response_allergy = API.make_request(method = "GET", endpoint= f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
 
             if not response_condition or not response_allergy:
                 return [None, None]

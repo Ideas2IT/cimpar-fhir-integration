@@ -66,8 +66,8 @@ class MedicationClient:
     @staticmethod
     def get_medication_by_patient_id(patient_id: str):
         try:
-            response_statement = API.do_request(method = "GET", endpoint= f"/fhir/MedicationStatement/?subject=Patient/{patient_id}")
-            response_request = API.do_request(method = "GET", endpoint= f"/fhir/MedicationRequest/?subject=Patient/{patient_id}")
+            response_statement = API.make_request(method = "GET", endpoint= f"/fhir/MedicationStatement/?subject=Patient/{patient_id}")
+            response_request = API.make_request(method = "GET", endpoint= f"/fhir/MedicationRequest/?subject=Patient/{patient_id}")
 
             if not response_statement:
                 return Response(status_code=404, content="Medication statement not found")

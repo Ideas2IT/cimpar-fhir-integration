@@ -14,9 +14,9 @@ logger = logging.getLogger("log")
 
 class CoverageClient:
     @staticmethod
-    def create(coverage: CoverageModel):
+    def create_coverage(coverage: CoverageModel):
         try:
-            response_coverage = API.do_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
+            response_coverage = API.make_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
             existing_coverages = response_coverage.json() if response_coverage else {}
 
             patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{coverage.beneficiary_id}")
@@ -52,7 +52,7 @@ class CoverageClient:
     @staticmethod
     def get_coverage_by_patient_id(patient_id: str):
         try:
-            response_coverage = API.do_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            response_coverage = API.make_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
             print("response_coverage", response_coverage.content)
 
             if not response_coverage:
@@ -99,7 +99,7 @@ class CoverageClient:
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            response_coverage = API.do_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            response_coverage = API.make_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
             return {"deleted": True, "patient_id": patient_id}
         except Exception as e:
             logger.error(f"Unable to delete coverage data: {str(e)}")
