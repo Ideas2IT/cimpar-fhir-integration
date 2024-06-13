@@ -7,7 +7,7 @@ from requests.auth import HTTPBasicAuth
 from aidbox.base import API
 from aidbox.resource.immunization import Immunization
 
-from utils.settings import settings
+#from utils.settings import settings
 from models.hl7_immunization_validation import VXO4Model
 
 logger = logging.getLogger("log")
@@ -16,8 +16,8 @@ logger = logging.getLogger("log")
 class HL7ImmunizationClient:
 
     def __init__(self):
-        self.base_url = settings.AIDBOX_SERVER_URL
-        self.token = requests.auth.HTTPBasicAuth(settings.AIDBOX_CLIENT_USERNAME, settings.AIDBOX_CLIENT_PASSWORD)
+        self.base_url = "http://localhost:8888"
+        self.token = requests.auth.HTTPBasicAuth("demo", "demosecret")
 
     def create_immunization(self, vx04_content):
         try:
