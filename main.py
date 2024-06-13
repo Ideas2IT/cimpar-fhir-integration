@@ -6,6 +6,9 @@ import os
 from os.path import abspath, dirname, join
 import logging
 from logging.handlers import TimedRotatingFileHandler
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Define the root path of your project
 root_path = abspath(dirname(__file__))
@@ -15,16 +18,16 @@ integration_pipeline_path = join(root_path, 'integration-pipeline')
 sys.path.insert(0, integration_pipeline_path)
 
 from utils.middleware import add_trace_and_session_id, origins
-from utils.settings import Settings
+#from utils.settings import Settings
 from utils.logging_config import simple_logger
 from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, authentication_router, patient_routes,
                     encounter_routes, medication_routes, condition_allergy_routes, hl7_immunization_router)
 
 # Load settings
-settings = Settings()
+#settings = Settings()
 
-app = FastAPI(docs_url="/documentation")
+app = FastAPI(docs_url="/api/documentation")
 if os.environ.get("ENVIRONMENT").upper() == "PRODUCTION":
     app = FastAPI(docs_url=None)
 
@@ -49,7 +52,7 @@ app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
 app.include_router(hl7_immunization_router.router, prefix="/api", tags=["IMMUNIZATION"])
 app.include_router(authentication_router.router, prefix="/api", tags=["AUTHENTICATION"])
 app.include_router(condition_allergy_routes.router, prefix="/api", tags=["ALLERGY_CONDITION"])
-app.include_router(integration_pipeline_router.router, prefix="/HL7v2", tags=["AIDBOX_INTEGRATION"])
+app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
 
 
 log_path = os.path.join(os.getcwd(), Logs.TAIL_PATH)
