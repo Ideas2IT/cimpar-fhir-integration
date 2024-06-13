@@ -34,9 +34,9 @@ async def get_all_patients(request: Request):
 
 
 @router.put("/patients/{patient_id}")
-async def update_patient(patient_id: str, pat: PatientUpdateModel):
-    logger.info(f"Updating patient ID:{patient_id}")
-    return PatientClient.update_patient_by_id(patient_id, pat)
+async def update_patient(pat: PatientUpdateModel):
+    logger.info(f"Updating patient ID:{pat}")
+    return PatientClient.update_patient_by_id(pat)
 
 
 @router.delete("/patients/{patient_id}")
