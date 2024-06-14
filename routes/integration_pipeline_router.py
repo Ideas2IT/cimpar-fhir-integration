@@ -23,8 +23,8 @@ async def convert_message(message):
 async def request_wrapper(raw_data, action):
     try:
         parsed_data = await convert_message(raw_data.decode("utf-8"))
-        action(parsed_data["parsed"]["parsed"])
-        return {"message": "DONE"}
+        response = action(parsed_data["parsed"]["parsed"])
+        return response
     except Exception as e:
         response = json.dumps({'error': str(e)}).encode('utf-8')
         logger.error("Unable to add the record: %s" % response)
@@ -36,7 +36,9 @@ async def request_wrapper(raw_data, action):
 async def hl7v2_oru_r01(request: Request, raw_data: str =Body(..., media_type="text/plain")):
     raw_data = await request.body()
     logger.info("raw_data: %s" % raw_data)
-    return await request_wrapper(raw_data, R01.run)
+    response = await request_wrapper(raw_data, R01.run)
+    logger.info("response: %s" % response)
+    return response
 
 
 @router.post("/VXU_V04")

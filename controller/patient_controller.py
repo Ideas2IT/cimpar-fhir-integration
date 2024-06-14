@@ -1,12 +1,16 @@
 import logging
 import traceback
 from fastapi import Response, status
+from datetime import datetime
 
 from aidbox.base import HumanName, Address, ContactPoint
-from aidbox.resource.patient import Patient, Patient_Contact
+from aidbox.resource.patient import Patient_Contact, Patient
 
 from constants import PHONE_SYSTEM, EMAIL_SYSTEM
 from models.patient_validation import PatientModel, PatientUpdateModel
+from HL7v2 import get_unique_patient_id_json
+from controller.auth_controller import AuthClient
+from models.auth_validation import UserModel, User
 
 logger = logging.getLogger("log")
 
@@ -15,7 +19,10 @@ class PatientClient:
     @staticmethod
     def create_patient(pat: PatientModel):
         try:
+            patient_id = get_unique_patient_id_json(pat.first_name, pat.last_name,
+                                                    pat.date_of_birth)
             patient = Patient(
+                id=patient_id,
                 name=[
                     HumanName(
                         family=pat.last_name, given=[pat.first_name, pat.middle_name]
@@ -43,6 +50,9 @@ class PatientClient:
             )
             patient.save()
             response_data = {"id": patient.id, "created": True}
+            if not User.get({"id": patient.id}):
+                user = UserModel(email=pat.email, id=patient.id)
+                response_data = AuthClient.create(user)
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
         except Exception as e:
@@ -58,7 +68,8 @@ class PatientClient:
             patient = Patient.from_id(patient_id)
             if patient:
                 logger.info(f"Patient Found: {patient_id}")
-                return patient
+                formatted_data = PatientClient.extract_patient_data(patient)
+                return formatted_data
             return Response(
                 content="Patient not found", status_code=status.HTTP_404_NOT_FOUND
             )
@@ -69,7 +80,7 @@ class PatientClient:
                 content=f"Error: Unable to Error retrieving patient",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        
+
     @staticmethod
     def get_all_patients():
         try:
@@ -147,3 +158,69 @@ class PatientClient:
                 content="Error: Unable to delete patient",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+    @staticmethod
+    def extract_patient_data(patient):
+        extracted_data = {}
+
+        # Extract id
+        extracted_data['id'] = patient.id
+
+        # Extract birthDate and convert to timestamp
+        extracted_data['dob'] = patient.birthDate
+        # extracted_data['dob'] = None
+        # if patient.birthDate:
+        #     # Convert birthDate to Unix timestamp (milliseconds)
+        #     extracted_data['dob'] = int(datetime.fromisoformat(patient.birthDate).timestamp() * 1000)
+
+        # Extract name components
+        if patient.name:
+            extracted_data['firstName'] = patient.name[0].given[0] if patient.name[0].given else None
+            extracted_data['middleName'] = patient.name[0].given[1] if len(patient.name[0].given) > 1 else None
+            extracted_data['lastName'] = patient.name[0].family
+        else:
+            extracted_data['firstName'] = None
+            extracted_data['middleName'] = None
+            extracted_data['lastName'] = None
+
+        # Extract gender
+        extracted_data['gender'] = patient.gender
+
+        # Extract address components
+        if patient.address:
+            extracted_data['address'] = patient.address[0].text
+            extracted_data['zipCode'] = patient.address[0].postalCode
+            extracted_data['city'] = patient.address[0].city
+            extracted_data['country'] = patient.address[0].country
+            extracted_data['state'] = patient.address[0].state
+        else:
+            extracted_data['address'] = None
+            extracted_data['zipCode'] = None
+            extracted_data['city'] = None
+            extracted_data['country'] = None
+            extracted_data['state'] = None
+
+        # Extract email and phoneNo from contact information
+        if patient.contact:
+            for telecom in patient.contact[0].telecom:
+                if telecom.system == 'email':
+                    extracted_data['email'] = telecom.value
+                elif telecom.system == 'phone':
+                    extracted_data['phoneNo'] = telecom.value
+        else:
+            extracted_data['email'] = None
+            extracted_data['phoneNo'] = None
+
+        # Extract lastUpdated timestamp
+        extracted_data['lastUpdated'] = patient.meta.lastUpdated
+
+        # Handle missing fields by defaulting to None
+        default_fields = [
+            'dob', 'firstName', 'middleName', 'lastName', 'gender', 'address', 'zipCode',
+            'city', 'country', 'state', 'email', 'phoneNo', 'lastUpdated'
+        ]
+        for field in default_fields:
+            if extracted_data.get(field) is None:
+                extracted_data[field] = None
+
+        return extracted_data

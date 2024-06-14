@@ -9,6 +9,7 @@ from controller.insurance_controller import CoverageClient
 router = APIRouter()
 logger = logging.getLogger("log")
 
+
 @router.post('/insurance')
 @permission_required("INSURANCE", "WRITE")
 async def insurance_route(ins_plan: CoverageModel, request: Request):
@@ -16,6 +17,7 @@ async def insurance_route(ins_plan: CoverageModel, request: Request):
     response = CoverageClient.create_coverage(ins_plan)
     logger.info("Response: %s" % response)
     return response
+
 
 @router.get('/insurance/{patient_id}')
 @permission_required("INSURANCE", "READ")

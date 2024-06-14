@@ -3,27 +3,29 @@ from typing import Literal, Any
 import os
 from aidbox.base import Meta, IncEx
 
+from utils.common_utils import bearer_token
+
 base = os.environ.get("AIDBOX_URL")
 
 
 class AidboxApi:
     @classmethod
-    def api_from_id(cls, id: str, token: str):
-        token = f"Bearer {token}"
+    def from_id(cls, id: str):
+        token = f"Bearer {bearer_token.get(None)}"
         response = requests.get(url=f"{base}/fhir/{cls.__name__}/{id}", auth=token)
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         return cls(**response.json())
 
     @classmethod
-    def api_bundle(cls, entry: list[Any], type: Literal["transaction"], token: str):
-        token = f"Bearer {token}"
+    def bundle(cls, entry: list[Any], type: Literal["transaction"]):
+        token = f"Bearer {bearer_token.get(None)}"
         data = {"resourceType": "Bundle", "type": type, "entry": entry}
         response = requests.post(url=f"{base}/fhir", json=data, auth=token)
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
 
     @classmethod
-    def api_get(cls, *args: dict[str, Any], token: str):
-        token = f"Bearer {token}"
+    def get(cls, *args: dict[str, Any]):
+        token = f"Bearer {bearer_token.get(None)}"
         search_params: dict[str, Any] = {}
         [search_params.update(d) for d in args]
         response = requests.get(
@@ -37,8 +39,8 @@ class AidboxApi:
             else []
         )
 
-    def api_delete(self, token: str):
-        token = f"Bearer {token}"
+    def delete(self):
+        token = f"Bearer {bearer_token.get(None)}"
         assert self.id is not None
         resource_type = self.__class__.__name__
         response = requests.delete(
@@ -46,8 +48,8 @@ class AidboxApi:
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
 
-    def api_save(self, token: str):  # create | persist | save
-        token = f"Bearer {token}"
+    def save(self):  # create | persist | save
+        token = f"Bearer {bearer_token.get(None)}"
         resource_type = self.__class__.__name__
         response = requests.put(
             url=f"{base}/fhir/{resource_type}/{self.id or ''}",
@@ -92,13 +94,14 @@ class AidboxApi:
         return data
 
     @classmethod
-    def api_do_request(cls, endpoint, token: str, method="GET"):
+    def make_request(cls, endpoint, method="GET"):
         url = f"{base}{endpoint}"
+        token = f"Bearer {bearer_token.get(None)}"
         headers = {'authorization': token}
         return requests.request(method, url, headers=headers)
 
     @staticmethod
-    def api_open_request(endpoint, method="GET",  **kwargs):
+    def open_request(endpoint, method="GET", **kwargs):
         url = f"{base}{endpoint}"
         return requests.request(method, url, **kwargs)
 

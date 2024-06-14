@@ -1,10 +1,11 @@
 from fastapi import Response, status, HTTPException
 import logging
 import traceback
+from aidbox.base import API
 
 from models.auth_validation import (
     UserModel, TokenModel,
-    User, AccessPolicy, UserLink, CimparRole, CimparPermission
+    User, AccessPolicy, CimparRole, CimparPermission
 )
 from services.aidbox_service import AidboxApi
 from HL7v2 import get_md5
@@ -17,7 +18,7 @@ class AuthClient:
     def create(user: UserModel):
         try:
             logger.info("Creating the user: %s" % user)
-            user_id = get_md5([user.email])
+            user_id = user.id
             if user.role.lower() == "admin":
                 raise Exception("Not allowed to crate the admin role through API: %s" % user.role)
             cimpar_role = CimparRole.get({"id": user.role})
@@ -32,14 +33,14 @@ class AuthClient:
             # Create access policy in Aidbox
             access_policy = AccessPolicy(
                 engine="allow",
-                link=[UserLink(resourceType="User", id=user_id)]
+                link=[{"resourceType": "User", "id": user_id}]
             )
             access_policy.save()
             # Create Permission
             role_response = CimparPermission(
                 id=get_md5([user_id, "PERMISSION"]),
-                user_id=UserLink(resourceType="User", id=user_id),
-                cimpar_role=UserLink(resourceType="CimparRole", id=user.role)
+                user_id={"resourceType": "User", "id": user_id},
+                cimpar_role={"resourceType": "CimparRole", "id": user.role}
             )
             role_response.save()
             return {"id": user_id, "email": user.email}
@@ -51,11 +52,12 @@ class AuthClient:
     @staticmethod
     def create_token(token: TokenModel):
         try:
+            resp = None
             logger.info("Creating the access token: %s" % token)
-            user_id = get_md5([token.username])
-            if not User.get({"id": user_id}):
+            res = API.make_request(method="GET", endpoint=f"/User?.email={token.username}", json=token.__dict__)
+            if res.json()["total"] == 0:
                 raise Exception("Given User Not Exist %s" % token.username)
-            response = AidboxApi.api_open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
+            response = AidboxApi.open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
             response.raise_for_status()
             if response.status_code != 200:
                 raise HTTPException(
@@ -68,5 +70,6 @@ class AuthClient:
         except Exception as e:
             logger.error(f"Unable to create a token: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(content=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+            return Response(content=str(e),
+                            status_code=status.HTTP_400_BAD_REQUEST)
 

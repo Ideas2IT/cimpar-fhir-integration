@@ -61,7 +61,7 @@ def get_first_last_name_dob(data):
                 first_name = last_name = ""
         else:
             first_name = last_name = ""
-        dob = patient.get("birthDate", "")
+        dob = patient.get("birthDate")
         return first_name, last_name, dob
     return "", "", ""
 
@@ -69,4 +69,9 @@ def get_first_last_name_dob(data):
 def get_unique_patient_id(data):
     first_name, last_name, dob = get_first_last_name_dob(data)
     return get_md5([first_name, last_name, dob])
+
+
+def get_unique_patient_id_json(first_name="", last_name="", dob=""):
+    return get_md5([first_name, last_name, dob])
+
 

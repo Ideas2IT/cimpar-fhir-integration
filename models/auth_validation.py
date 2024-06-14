@@ -3,8 +3,9 @@ from aidbox.base import DomainResource, BackboneElement
 
 
 class UserModel(BaseModel):
+    id: str
     email: str
-    password: str
+    password: str = "SecureRandom$2024!"
     role: str = "patient"
 
 
@@ -20,13 +21,9 @@ class User(DomainResource):
     password: str
 
 
-class UserLink(BackboneElement):
-    resourceType: str
-
-
 class AccessPolicy(DomainResource):
     engine: str = "allow"
-    link: list[UserLink] = []
+    link: list
 
 
 class PermissionEndpoint(BaseModel):
@@ -47,6 +44,6 @@ class CimparRole(DomainResource):
 
 
 class CimparPermission(DomainResource):
-    user_id: UserLink
-    cimpar_role: UserLink
+    user_id: dict
+    cimpar_role: dict
 

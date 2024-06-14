@@ -1,13 +1,19 @@
 import base64
 import json
 import logging
+import contextvars
+import requests
+import os
 from functools import wraps
 from fastapi import HTTPException, Request
 
-from services.aidbox_service import AidboxApi
 from HL7v2 import get_md5
 
 logger = logging.getLogger("log")
+
+bearer_token = contextvars.ContextVar('bearer_token')
+user_id_context = contextvars.ContextVar('user_id')
+base = os.environ.get("AIDBOX_URL")
 
 
 def decode_jwt_without_verification(token):
@@ -30,20 +36,28 @@ def decode_jwt_without_verification(token):
     return payload_json
 
 
+def create_request(endpoint, token, method="GET"):
+    # Facing circular import if I call the AIDBOX API because of the bearer context variable.
+    # So Adding the AIDBOX API call here alone for the permission checks
+    url = f"{base}{endpoint}"
+    headers = {'authorization': token}
+    return requests.request(method, url, headers=headers)
+
+
 def get_user(user_id: str, auth_token: str):
-    response = AidboxApi.api_do_request(method="GET", endpoint=f"/fhir/User/{user_id}", token=auth_token)
+    response = create_request(method="GET", endpoint=f"/fhir/User/{user_id}", token=auth_token)
     return response.json() if response.status_code == 200 else False
 
 
 def get_permission(permission_id: str, auth_token: str):
-    response = AidboxApi.api_do_request(method="GET", endpoint=f"/fhir/CimparPermission/{permission_id}",
-                                        token=auth_token)
+    response = create_request(method="GET", endpoint=f"/fhir/CimparPermission/{permission_id}",
+                              token=auth_token)
     return response.json() if response.status_code == 200 else False
 
 
 def get_privileges(privileges_id: str, auth_token: str):
-    response = AidboxApi.api_do_request(method="GET", endpoint=f"/fhir/CimparRole/{privileges_id}",
-                                        token=auth_token)
+    response = create_request(method="GET", endpoint=f"/fhir/CimparRole/{privileges_id}",
+                              token=auth_token)
     return response.json() if response.status_code == 200 else False
 
 
@@ -69,10 +83,12 @@ def permission_required(resource: str, action: str):
         async def wrapper(*args, **kwargs):
             request: Request = kwargs.get("request")
             auth_token = request.headers.get("Authorization")
+            bearer_token.set(auth_token.split("Bearer ")[1])
             if not auth_token:
                 raise HTTPException(status_code=403, detail="Permission denied: Missing auth_token")
             payload = decode_jwt_without_verification(auth_token)
             user_id = payload.get("sub")
+            user_id_context.set(user_id)
             if not get_user(user_id, auth_token):
                 raise HTTPException(status_code=403, detail="Permission denied")
             if not has_permission(user_id, resource, action, auth_token):
