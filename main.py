@@ -5,6 +5,7 @@ from fastapi.openapi.utils import get_openapi
 import sys
 import os
 from os.path import abspath, dirname, join
+from urllib.parse import urljoin
 import logging
 from logging.handlers import TimedRotatingFileHandler
 from dotenv import load_dotenv
@@ -27,6 +28,9 @@ from routes import (insurance_routes, integration_pipeline_router, authenticatio
 # Load settings
 app = FastAPI(docs_url=None)
 
+
+# Configure CORS
+origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
 
 # Add the middleware
 app.middleware("http")(add_trace_and_session_id)
@@ -54,9 +58,20 @@ app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags
 
 @app.get("/api/documentation", include_in_schema=False)
 async def get_documentation(request: Request):
+    base_url = os.environ.get("BASE_URL", str(request.base_url))
+    openapi_url = urljoin(base_url, "api/openapi.json")
     if os.environ.get("ENVIRONMENT").upper() in ("DEVELOPMENT", "QA"):
-        return get_swagger_ui_html(openapi_url=request.scope.get("root_path") + "/openapi.json",
-                               title=os.environ.get("APP_DOC_ENVIRONMENT"))
+        return get_swagger_ui_html(openapi_url=openapi_url, title=os.environ.get("APP_DOC_ENVIRONMENT"))
+    else:
+        return Response(
+            content=f"Production Environment documentation is disabled"
+        )
+
+
+@app.get("/api/openapi.json", include_in_schema=False)
+async def get_openapi_endpoint():
+    if os.environ.get("ENVIRONMENT").upper() in ("DEVELOPMENT", "QA"):
+        return app.openapi()
     else:
         return Response(
             content=f"Production Environment documentation is disabled"
