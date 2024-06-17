@@ -8,7 +8,7 @@ from models.auth_validation import (
     User, AccessPolicy, CimparRole, CimparPermission
 )
 from services.aidbox_service import AidboxApi
-from HL7v2 import get_md5
+from utils.common_utils import generate_permission_id
 
 logger = logging.getLogger("log")
 
@@ -38,7 +38,7 @@ class AuthClient:
             access_policy.save()
             # Create Permission
             role_response = CimparPermission(
-                id=get_md5([user_id, "PERMISSION"]),
+                id=generate_permission_id(user_id),
                 user_id={"resourceType": "User", "id": user_id},
                 cimpar_role={"resourceType": "CimparRole", "id": user.role}
             )
@@ -65,8 +65,17 @@ class AuthClient:
                     detail="Incorrect username or password",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            resp = response.json()
-            return {"access_token": resp["access_token"]}
+            access_token = response.json()["access_token"]
+            user_id = res.json()["entry"][0]["resource"]["id"]
+            permission_id = generate_permission_id(user_id)
+            perm_res = API.make_request(method="GET", endpoint=f"/CimparPermission/{permission_id}")
+            if perm_res.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User Permission not available"
+                )
+            role_name = perm_res.json()["cimpar_role"]["id"]
+            return {"access_token": access_token, "role": role_name}
         except Exception as e:
             logger.error(f"Unable to create a token: {str(e)}")
             logger.error(traceback.format_exc())

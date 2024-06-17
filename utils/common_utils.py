@@ -97,3 +97,7 @@ def permission_required(resource: str, action: str):
         return wrapper
     return decorator
 
+
+def generate_permission_id(user_id):
+    return get_md5([user_id, "PERMISSION"])
+
