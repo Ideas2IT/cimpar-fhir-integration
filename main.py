@@ -25,7 +25,7 @@ from routes import (insurance_routes, integration_pipeline_router, authenticatio
                     encounter_routes, medication_routes, condition_allergy_routes, hl7_immunization_router)
 
 # Load settings
-app = FastAPI(root_path="/api", docs_url=None)
+app = FastAPI(docs_url=None)
 
 
 # Add the middleware
@@ -42,19 +42,19 @@ app.add_middleware(
 app.state.logger = simple_logger
 
 # Add the Router
-app.include_router(insurance_routes.router, tags=["INSURANCE"])
-app.include_router(patient_routes.router, tags=["PATIENT"])
-app.include_router(encounter_routes.router, tags=["ENCOUNTER"])
-app.include_router(medication_routes.router, tags=["MEDICATION"])
-app.include_router(hl7_immunization_router.router, tags=["IMMUNIZATION"])
-app.include_router(authentication_router.router, tags=["AUTHENTICATION"])
-app.include_router(condition_allergy_routes.router, tags=["ALLERGY_CONDITION"])
-app.include_router(integration_pipeline_router.router, prefix="/HL7v2", tags=["AIDBOX_INTEGRATION"])
+app.include_router(insurance_routes.router, prefix="/api", tags=["INSURANCE"])
+app.include_router(patient_routes.router, prefix="/api", tags=["PATIENT"])
+app.include_router(encounter_routes.router, prefix="/api", tags=["ENCOUNTER"])
+app.include_router(medication_routes.router, prefix="/api", tags=["MEDICATION"])
+app.include_router(hl7_immunization_router.router, prefix="/api", tags=["IMMUNIZATION"])
+app.include_router(authentication_router.router, prefix="/api", tags=["AUTHENTICATION"])
+app.include_router(condition_allergy_routes.router, prefix="/api", tags=["ALLERGY_CONDITION"])
+app.include_router(integration_pipeline_router.router, prefix="/api/HL7v2", tags=["AIDBOX_INTEGRATION"])
 
 
-@app.get("/documentation", include_in_schema=False)
+@app.get("/api/documentation", include_in_schema=False)
 async def get_documentation(request: Request):
-    if os.environ.get("ENVIRONMENT").upper() != "PRODUCTION":
+    if os.environ.get("ENVIRONMENT").upper() in ("DEVELOPMENT", "QA"):
         return get_swagger_ui_html(openapi_url=request.scope.get("root_path") + "/openapi.json",
                                title=os.environ.get("APP_DOC_ENVIRONMENT"))
     else:
