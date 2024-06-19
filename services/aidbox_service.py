@@ -11,25 +11,31 @@ base = os.environ.get("AIDBOX_URL")
 class AidboxApi:
     @classmethod
     def from_id(cls, id: str):
+        assert bearer_token.get(None) is not None
         token = f"Bearer {bearer_token.get(None)}"
-        response = requests.get(url=f"{base}/fhir/{cls.__name__}/{id}", auth=token)
+        headers = {'authorization': token}
+        response = requests.get(url=f"{base}/fhir/{cls.__name__}/{id}", headers=headers,)
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         return cls(**response.json())
 
     @classmethod
     def bundle(cls, entry: list[Any], type: Literal["transaction"]):
+        assert bearer_token.get(None) is not None
         token = f"Bearer {bearer_token.get(None)}"
+        headers = {'authorization': token}
         data = {"resourceType": "Bundle", "type": type, "entry": entry}
-        response = requests.post(url=f"{base}/fhir", json=data, auth=token)
+        response = requests.post(url=f"{base}/fhir", json=data, headers=headers,)
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
 
     @classmethod
     def get(cls, *args: dict[str, Any]):
+        assert bearer_token.get(None) is not None
         token = f"Bearer {bearer_token.get(None)}"
+        headers = {'authorization': token}
         search_params: dict[str, Any] = {}
         [search_params.update(d) for d in args]
         response = requests.get(
-            url=f"{base}/fhir/{cls.__name__}", params=search_params, auth=token
+            url=f"{base}/fhir/{cls.__name__}", params=search_params, headers=headers,
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         data = response.json()  # TODO: handle HTTP response bodies
@@ -40,21 +46,25 @@ class AidboxApi:
         )
 
     def delete(self):
+        assert bearer_token.get(None) is not None
         token = f"Bearer {bearer_token.get(None)}"
+        headers = {'authorization': token}
         assert self.id is not None
         resource_type = self.__class__.__name__
         response = requests.delete(
-            url=f"{base}/fhir/{resource_type}/{self.id}", auth=token
+            url=f"{base}/fhir/{resource_type}/{self.id}", headers=headers,
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
 
     def save(self):  # create | persist | save
+        assert bearer_token.get(None) is not None
         token = f"Bearer {bearer_token.get(None)}"
+        headers = {'authorization': token}
         resource_type = self.__class__.__name__
         response = requests.put(
             url=f"{base}/fhir/{resource_type}/{self.id or ''}",
             json=self.dumps(exclude_unset=True),
-            auth=token,
+            headers=headers,
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         data = response.json()
@@ -95,6 +105,7 @@ class AidboxApi:
 
     @classmethod
     def make_request(cls, endpoint, method="GET"):
+        assert bearer_token.get(None) is not None
         url = f"{base}{endpoint}"
         token = f"Bearer {bearer_token.get(None)}"
         headers = {'authorization': token}

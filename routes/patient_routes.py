@@ -34,7 +34,8 @@ async def get_all_patients(request: Request):
 
 
 @router.put("/patients/{patient_id}")
-async def update_patient(pat: PatientUpdateModel):
+@permission_required("PATIENT", "UPDATE")
+async def update_patient(pat: PatientUpdateModel, request: Request):
     logger.info(f"Updating patient ID:{pat}")
     return PatientClient.update_patient_by_id(pat)
 

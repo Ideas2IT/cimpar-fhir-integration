@@ -4,13 +4,14 @@ from fastapi import Response, status
 from datetime import datetime
 
 from aidbox.base import HumanName, Address, ContactPoint
-from aidbox.resource.patient import Patient_Contact, Patient
+from aidbox.resource.patient import Patient_Contact
 
 from constants import PHONE_SYSTEM, EMAIL_SYSTEM
 from models.patient_validation import PatientModel, PatientUpdateModel
 from HL7v2 import get_unique_patient_id_json
 from controller.auth_controller import AuthClient
 from models.auth_validation import UserModel, User
+from services.aidbox_resource_wrapper import Patient
 
 logger = logging.getLogger("log")
 
@@ -21,6 +22,9 @@ class PatientClient:
         try:
             patient_id = get_unique_patient_id_json(pat.first_name, pat.last_name,
                                                     pat.date_of_birth)
+            # As this is open API, and we wont get Token here, so using default AIDBOX API.
+            from aidbox.resource.patient import Patient
+            #####
             patient = Patient(
                 id=patient_id,
                 name=[
@@ -49,6 +53,7 @@ class PatientClient:
                 ],
             )
             patient.save()
+            logger.debug("Patient saved successfully")
             response_data = {"id": patient.id, "created": True}
             if not User.get({"id": patient.id}):
                 user = UserModel(email=pat.email, id=patient.id)
