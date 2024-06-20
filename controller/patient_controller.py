@@ -1,6 +1,7 @@
 import logging
 import traceback
 from fastapi import Response, status, HTTPException
+from fastapi.responses import JSONResponse
 
 from aidbox.base import HumanName, Address, ContactPoint
 from aidbox.resource.patient import Patient_Contact
@@ -22,7 +23,7 @@ class PatientClient:
         try:
             patient_id = get_unique_patient_id_json(pat.first_name, pat.last_name,
                                                     pat.date_of_birth)
-            # As this is open API, and we wont get Token here, so using default AIDBOX API.
+            # As this is open API, and we won't get Token here, so using default AIDBOX API.
             from aidbox.resource.patient import Patient
             #####
 
@@ -72,8 +73,14 @@ class PatientClient:
         except Exception as e:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Create patient " + str(e), status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create patient",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -90,9 +97,14 @@ class PatientClient:
         except Exception as e:
             logger.error(f"Error retrieving patient: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Error retrieving patient",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_response_data = {
+                "error": "Unable to create patient",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -108,9 +120,14 @@ class PatientClient:
         except Exception as e:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to retrive patients",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_response_data = {
+                "error": "Unable to create patient",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -150,8 +167,14 @@ class PatientClient:
         except Exception as e:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Create patient", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create patient",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -168,9 +191,14 @@ class PatientClient:
         except Exception as e:
             logger.error(f"Error : Unable to delete patient: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content="Error: Unable to delete patient",
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            error_response_data = {
+                "error": "Unable to create patient",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
