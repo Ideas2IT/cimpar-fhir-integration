@@ -2,12 +2,13 @@ import logging
 import traceback
 from fastapi import Response, status
 
-from aidbox.base import API
 from aidbox.base import Period,  CodeableConcept, Reference, Coding
-from aidbox.resource.encounter import Encounter, Encounter_Participant, Encounter_Location
+from aidbox.resource.encounter import Encounter_Participant, Encounter_Location
 
 from constants import PATIENT_REFERENCE, CLASS_DISPLAY
 from models.encounter_validation import EncounterModel, EncounterUpdateModel
+from services.aidbox_resource_wrapper import Encounter 
+
 
 logger = logging.getLogger("log")
 
@@ -39,7 +40,7 @@ class EncounterClient:
     @staticmethod
     def get_encounter_by_id(patient_id: str):
         try:
-            encounter = API.make_request(method = "GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method="GET", endpoint=f"/fhir/Encounter/?subject=Patient/{patient_id}")
             if encounter:
                 logger.info(f"Encounter Found: {patient_id}")
                 return encounter.json()
@@ -97,7 +98,7 @@ class EncounterClient:
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            encounter = API.make_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             return {"deleted": True, "encounter": encounter.id}
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
