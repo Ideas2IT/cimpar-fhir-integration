@@ -2,13 +2,13 @@ import logging
 import traceback
 from fastapi import Response, status
 
-from aidbox.base import API
 from aidbox.base import  CodeableConcept, Reference, Coding
-from aidbox.resource.condition import Condition
-from aidbox.resource.allergyintolerance import AllergyIntolerance
 
+from services.aidbox_service import AidboxApi
 from constants import PATIENT_REFERENCE, STATUS_SYSTEM
 from models.condition_validation import ConditionModel, ConditionUpdateModel
+from services.aidbox_resource_wrapper import Condition 
+from services.aidbox_resource_wrapper import AllergyIntolerance 
 
 logger = logging.getLogger("log")
 
@@ -81,8 +81,8 @@ class ConditionClient:
     @staticmethod
     def get_condition_by_patient_id(patient_id: str):
         try:
-            response_condition = API.make_request(method = "GET", endpoint= f"/fhir/Condition/?subject=Patient/{patient_id}")
-            response_allergy = API.make_request(method = "GET", endpoint= f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
+            response_condition = Condition.make_request(method = "GET", endpoint= f"/fhir/Condition/?subject=Patient/{patient_id}")
+            response_allergy = AllergyIntolerance.make_request(method = "GET", endpoint= f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
 
             if not response_condition or not response_allergy:
                 return [None, None]
@@ -162,6 +162,28 @@ class ConditionClient:
             logger.error(traceback.format_exc())
             return Response(
                 content=f"Error: Unable to update Condition and Allergy", status_code=status.HTTP_400_BAD_REQUEST
+            )
+        
+
+    @staticmethod
+    def get_allergy_list(allergy_name: str):
+        try:
+            allergy_list = AidboxApi.make_request(
+                method="GET",
+                endpoint=f"/Concept?.definition$contains={allergy_name}&system=http://hl7.org/fhir/sid/icd-10",
+            )
+            logger.info(f"Allergy List: {allergy_list}")
+            if not allergy_list:
+                return Response(status_code=404, content="Allergy not found")
+            return {
+                "allergy_list": allergy_list.json()
+            }
+        except Exception as e:
+            logger.error(f"Unable to get allergy list: {str(e)}")
+            logger.error(traceback.format_exc())
+            return Response(
+                content=f"Error: No Allergy data found for the {allergy_name}",
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         
