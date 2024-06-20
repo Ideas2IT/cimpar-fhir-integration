@@ -7,6 +7,7 @@ from controller.insurance_controller import CoverageClient
 
 
 router = APIRouter()
+
 logger = logging.getLogger("log")
 
 
