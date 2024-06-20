@@ -2,11 +2,11 @@ from fastapi import Response, status
 import logging
 import traceback
 
-from aidbox.base import API
 from aidbox.base import Reference, CodeableConcept, Coding
-from aidbox.resource.coverage import Coverage, Coverage_Class
+from aidbox.resource.coverage import Coverage_Class
 
 from constants import GROUP_SYSTEM, GROUP_CODE,PATIENT_REFERENCE
+from services.aidbox_resource_wrapper import Coverage 
 from models.insurance_validation import CoverageModel, CoverageUpdateModel
 
 logger = logging.getLogger("log")
@@ -16,7 +16,7 @@ class CoverageClient:
     @staticmethod
     def create_coverage(coverage: CoverageModel):
         try:
-            response_coverage = API.make_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
+            response_coverage = Coverage.make_request(method="GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
             existing_coverages = response_coverage.json() if response_coverage else {}
 
             patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{coverage.beneficiary_id}")
@@ -26,6 +26,7 @@ class CoverageClient:
                 return Response(
                     content="A patient can only have 3 insurance", status_code=status.HTTP_400_BAD_REQUEST
                 )
+
             insurance_plan = Coverage(
                 status=coverage.status,
                 beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{coverage.beneficiary_id}"),
@@ -52,12 +53,11 @@ class CoverageClient:
     @staticmethod
     def get_coverage_by_patient_id(patient_id: str):
         try:
-            response_coverage = API.make_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
-            print("response_coverage", response_coverage.content)
+            response_coverage = Coverage.make_request(method = "GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
 
             if not response_coverage:
                 return Response(status_code=404, content="Coverage not found")
-            coverage = response_coverage.json()['entry'][0]['resource'] 
+            coverage = response_coverage.json() 
 
             return {"coverage": coverage}
         except Exception as e:
@@ -95,11 +95,11 @@ class CoverageClient:
             return Response(
                 content=f"Error: Unable to update coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
             )
-        
+
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            response_coverage = API.make_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            response_coverage = Coverage.make_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
             return {"deleted": True, "patient_id": patient_id}
         except Exception as e:
             logger.error(f"Unable to delete coverage data: {str(e)}")
@@ -107,3 +107,4 @@ class CoverageClient:
             return Response(
                 content=f"Error: Unable to delete coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
             )
+

@@ -2,14 +2,9 @@ from fastapi import Response, status
 import logging
 import traceback
 import requests
-from requests.auth import HTTPBasicAuth
 import os
 
-from aidbox.base import API
-from aidbox.resource.immunization import Immunization
-
-#from utils.settings import settings
-from models.hl7_immunization_validation import VXO4Model
+from services.aidbox_resource_wrapper import Immunization
 
 logger = logging.getLogger("log")
 
@@ -38,7 +33,7 @@ class HL7ImmunizationClient:
     @staticmethod
     def get_immunizations_by_patient_id(patient_id: str):
         try:
-            response_immunization = API.make_request(method = "GET", endpoint= f"/fhir/Immunization/?patient=Patient/{patient_id}")
+            response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?patient=Patient/{patient_id}")
 
             if not response_immunization:
                 return Response(status_code=404, content="Immunizations not found")

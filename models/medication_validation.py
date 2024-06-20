@@ -24,3 +24,4 @@ class MedicationUpdateModel(BaseModel):
     patient_id: str
     request_id: str
     statement_id: str
+
