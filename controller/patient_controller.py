@@ -1,17 +1,17 @@
 import logging
 import traceback
-from fastapi import Response, status
-from datetime import datetime
+from fastapi import Response, status, HTTPException
 
 from aidbox.base import HumanName, Address, ContactPoint
 from aidbox.resource.patient import Patient_Contact
 
 from constants import PHONE_SYSTEM, EMAIL_SYSTEM
 from models.patient_validation import PatientModel, PatientUpdateModel
-from HL7v2 import get_unique_patient_id_json
+from HL7v2 import get_unique_patient_id_json, get_md5
 from controller.auth_controller import AuthClient
 from models.auth_validation import UserModel, User
 from services.aidbox_resource_wrapper import Patient
+
 
 logger = logging.getLogger("log")
 
@@ -25,6 +25,15 @@ class PatientClient:
             # As this is open API, and we wont get Token here, so using default AIDBOX API.
             from aidbox.resource.patient import Patient
             #####
+
+            patient_id_update = get_md5([pat.first_name, pat.last_name, pat.date_of_birth])
+
+            if Patient.get({"id": patient_id_update}):
+                return HTTPException(
+                    detail=f"Error: Patient with id {patient_id_update} already exists",
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
+
             patient = Patient(
                 id=patient_id,
                 name=[
@@ -64,7 +73,7 @@ class PatientClient:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"Error: Unable to Create patient", status_code=status.HTTP_400_BAD_REQUEST
+                content=f"Error: Unable to Create patient " + str(e), status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -100,7 +109,7 @@ class PatientClient:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
             return Response(
-                content=f"Error: Unable to retrie patients",
+                content=f"Error: Unable to retrive patients",
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
         
