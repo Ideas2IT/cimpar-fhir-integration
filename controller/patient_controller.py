@@ -86,7 +86,8 @@ class PatientClient:
     @staticmethod
     def get_patient_by_id(patient_id: str):
         try:
-            patient = Patient.from_id(patient_id)
+            patient_json = Patient.from_id(patient_id)
+            patient = Patient(**patient_json)
             if patient:
                 logger.info(f"Patient Found: {patient_id}")
                 formatted_data = PatientClient.extract_patient_data(patient)
@@ -98,7 +99,7 @@ class PatientClient:
             logger.error(f"Error retrieving patient: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to create patient",
+                "error": "Unable to get the patient",
                 "details": str(e),
             }
 
@@ -121,7 +122,7 @@ class PatientClient:
             logger.error(f"Error retrieving patients: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to create patient",
+                "error": "Unable to retrieve all patients",
                 "details": str(e),
             }
 
@@ -168,7 +169,7 @@ class PatientClient:
             logger.error(f"Unable to create a patient: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to create patient",
+                "error": "Unable to update patient",
                 "details": str(e),
             }
 
@@ -192,7 +193,7 @@ class PatientClient:
             logger.error(f"Error : Unable to delete patient: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to create patient",
+                "error": "Unable to delete patient",
                 "details": str(e),
             }
 
@@ -266,3 +267,4 @@ class PatientClient:
                 extracted_data[field] = None
 
         return extracted_data
+

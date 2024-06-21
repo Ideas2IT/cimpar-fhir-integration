@@ -19,11 +19,11 @@ async def create_encounter(encounter: EncounterModel, request: Request):
     return response
 
 
-@router.get("/encounter/{encounter_id}")
+@router.get("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "READ")
-async def get_encounter(encounter_id: str, request: Request):
-    logger.info(f"Encounter ID:{encounter_id}")
-    return EncounterClient.get_encounter_by_id(encounter_id)
+async def get_encounter(patient_id: str, request: Request):
+    logger.info(f"Encounter ID:{patient_id}")
+    return EncounterClient.get_encounter_by_id(patient_id)
 
 
 @router.get("/encounter")
@@ -33,16 +33,16 @@ async def get_all_encounters(request: Request):
     return EncounterClient.get_all_encounters()
 
 
-@router.put("/encounter/{encounter_id}")
+@router.put("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "EDIT")
-async def update_encounter(encounter_id: str, encounter: EncounterUpdateModel, request: Request):
-    logger.info(f"Updating encounter ID:{encounter_id}")
-    return EncounterClient.update_by_patient_id(encounter_id, encounter)
+async def update_encounter(patient_id: str, encounter: EncounterUpdateModel, request: Request):
+    logger.info(f"Updating encounter ID:{patient_id}")
+    return EncounterClient.update_by_patient_id(patient_id, encounter)
 
 
-@router.delete("/encounter/{encounter_id}")
+@router.delete("/encounter/{patient_id}")
 @permission_required("ENCOUNTER", "DELETE")
-async def delete_encounter(encounter_id: str,  request: Request):
-    logger.info(f"Deleting encounter ID:{encounter_id}")
-    return EncounterClient.delete_by_patient_id(encounter_id)
+async def delete_encounter(patient_id: str,  request: Request):
+    logger.info(f"Deleting encounter ID:{patient_id}")
+    return EncounterClient.delete_by_patient_id(patient_id)
 

@@ -16,7 +16,7 @@ class AidboxApi:
         headers = {'authorization': token}
         response = requests.get(url=f"{base}/fhir/{cls.__name__}/{id}", headers=headers,)
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
-        return cls(**response.json())
+        return response.json()
 
     @classmethod
     def bundle(cls, entry: list[Any], type: Literal["transaction"]):
@@ -39,11 +39,7 @@ class AidboxApi:
         )
         response.raise_for_status()  # TODO: handle and type HTTP codes except 200+
         data = response.json()  # TODO: handle HTTP response bodies
-        return (
-            list(map(lambda patient: cls(**patient["resource"]), data["entry"]))
-            if "entry" in data
-            else []
-        )
+        return data["entry"] if "entry" in data else []
 
     def delete(self):
         assert bearer_token.get(None) is not None
