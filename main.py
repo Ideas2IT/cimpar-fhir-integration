@@ -28,6 +28,7 @@ from routes import (insurance_routes, integration_pipeline_router, authenticatio
 # Load settings
 app = FastAPI(docs_url=None)
 
+CIMPAR_BE_VERSION = "1.0.1"
 
 # Configure CORS
 origins = os.getenv("ALLOWED_ORIGINS", "").split(",")
@@ -100,7 +101,7 @@ def custom_openapi():
         return app.openapi_schema
     openapi_schema = get_openapi(
         title=os.environ.get("APP_DOC_ENVIRONMENT"),
-        version="1.0.0",
+        version=CIMPAR_BE_VERSION,
         description="Cimpar development API documentation for integrating and testing in the development environment",
         routes=app.routes,
     )
