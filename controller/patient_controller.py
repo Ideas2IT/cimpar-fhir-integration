@@ -99,7 +99,7 @@ class PatientClient:
             logger.error(f"Error retrieving patient: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to get the patient",
+                "error": "Unable to retrieve patient",
                 "details": str(e),
             }
 

@@ -1,6 +1,7 @@
 import logging
 import traceback
 from fastapi import Response, status
+from fastapi.responses import JSONResponse
 
 from aidbox.base import Period,  CodeableConcept, Reference, Coding
 from aidbox.resource.encounter import Encounter_Participant, Encounter_Location
@@ -31,10 +32,16 @@ class EncounterClient:
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
         except Exception as e:
-            logger.error(f"Error creating encounters {str(e)}")
+            logger.error(f"Error creating visit history {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Creating Encounter", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create visit history",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -50,12 +57,18 @@ class EncounterClient:
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to get encounter", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve visit history",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
-    def update_by_patient_id(patient_id: str , enc: EncounterUpdateModel):
+    def update_by_patient_id(patient_id: str, enc: EncounterUpdateModel):
         try:
             encounter = Encounter(
                 id=enc.id,
@@ -73,8 +86,14 @@ class EncounterClient:
         except Exception as e:
             logger.error(f"Unable to update encounter: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to update encounter", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to update visit history",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
     
     @staticmethod
@@ -90,23 +109,30 @@ class EncounterClient:
         except Exception as e:
             logger.error(f"Error retrieving encounters: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to get encounters", status_code=status.HTTP_400_BAD_REQUEST
-            )
+            error_response_data = {
+                "error": "Unable to retrieve visit history",
+                "details": str(e),
+            }
 
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
 
     @staticmethod
     def delete_by_patient_id(patient_id: str):
         try:
-            encounter = Encounter.make_request(method = "DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            encounter = Encounter.make_request(method="DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
             return {"deleted": True, "encounter": encounter.id}
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to delete encounter", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to update visit history",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
-        
-
-
-

@@ -1,7 +1,7 @@
-import logging
 import traceback
 import logging
 from fastapi import Response, status
+from fastapi.responses import JSONResponse
 
 from aidbox.base import Reference, CodeableConcept, Coding
 
@@ -61,8 +61,14 @@ class MedicationClient:
         except Exception as e:
             logger.error(f"Unable to create a medication request and statement: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Creating Patient", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create medication",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
@@ -83,8 +89,14 @@ class MedicationClient:
         except Exception as e:
             logger.error(f"Unable to get a medication data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: No Medication data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve medication",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
     
     @staticmethod
@@ -136,14 +148,12 @@ class MedicationClient:
         except Exception as e:
             logger.error(f"Unable to get medication list: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: No Medication data found for the {medication_name}",
-                status_code=status.HTTP_400_BAD_REQUEST,
+            error_response_data = {
+                "error": "Unable to update medication",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
-
-
-
-    
-
-
-

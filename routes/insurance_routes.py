@@ -34,8 +34,8 @@ async def update_insurance(patient_id: str, insurance_id: str, updated_insurance
     return CoverageClient.update_by_patient_id(patient_id, insurance_id, updated_insurance)
 
 
-@router.delete('/insurance/{insurance_id}')
+@router.delete('/insurance/{patient_id}/{insurance_id}')
 @permission_required("INSURANCE", "DELETE")
-async def delete_insurance(patient_id: str, request: Request):
-    logger.info(f"Request Patient_id: {patient_id}")
-    return CoverageClient.delete_by_patient_id(patient_id)
+async def delete_insurance(insurance_id: str, patient_id: str, request: Request):
+    logger.info(f"Request Patient_id: {insurance_id}")
+    return CoverageClient.delete_by_patient_id(patient_id, insurance_id)

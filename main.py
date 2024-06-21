@@ -25,6 +25,7 @@ from utils.config import Logs
 from routes import (insurance_routes, integration_pipeline_router, authentication_router, patient_routes,
                     encounter_routes, medication_routes, condition_allergy_routes)
 
+
 # Load settings
 app = FastAPI(docs_url=None)
 

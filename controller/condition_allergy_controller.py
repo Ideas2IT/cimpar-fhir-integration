@@ -1,8 +1,12 @@
 import logging
 import traceback
-from fastapi import Response, status
+from fastapi import status
+from fastapi.responses import JSONResponse
 
-from aidbox.base import  CodeableConcept, Reference, Coding
+from aidbox.base import API
+from aidbox.base import CodeableConcept, Reference, Coding
+from aidbox.resource.condition import Condition
+from aidbox.resource.allergyintolerance import AllergyIntolerance
 
 from services.aidbox_service import AidboxApi
 from constants import PATIENT_REFERENCE, STATUS_SYSTEM
@@ -53,7 +57,7 @@ class ConditionClient:
             else:
                 additional_allergy = None
 
-            if  con.family_condition:
+            if con.family_condition:
                 family_status = "active" if con.family_condition == True else "unknown"
                 family_condition = Condition(
                     clinicalStatus=CodeableConcept(coding=[Coding(system=STATUS_SYSTEM, code=family_status)]),
@@ -64,25 +68,29 @@ class ConditionClient:
 
             response_data = {"current_condition": current_condition.id if current_condition else None, 
                              "additional_condition": additional_condition.id if additional_condition else None, 
-                             "current_allergy" : current_allergy.id if current_allergy else None, 
-                             "additional_allergy" :  additional_allergy.id if additional_allergy else None, 
-                             "family_condition" : family_condition.id if family_condition else None,
+                             "current_allergy": current_allergy.id if current_allergy else None,
+                             "additional_allergy":  additional_allergy.id if additional_allergy else None,
+                             "family_condition": family_condition.id if family_condition else None,
                              "created": True}
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
         except Exception as e:
             logger.error(f"Error creating condition: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content="Error: Unable to Creating Condition and Allergy", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create Allergy and condition",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
-        
 
     @staticmethod
     def get_condition_by_patient_id(patient_id: str):
         try:
-            response_condition = Condition.make_request(method = "GET", endpoint= f"/fhir/Condition/?subject=Patient/{patient_id}")
-            response_allergy = AllergyIntolerance.make_request(method = "GET", endpoint= f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
+            response_condition = API.make_request(method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}")
+            response_allergy = API.make_request(method="GET", endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
 
             if not response_condition or not response_allergy:
                 return [None, None]
@@ -91,8 +99,14 @@ class ConditionClient:
         except Exception as e:
             logger.error(f"Error getting condition: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content="Error: Unable to get Condition and Allergy", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve Allergy and Condition",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -150,18 +164,24 @@ class ConditionClient:
 
             response_data = {"current_condition": current_condition.id if current_condition else None, 
                              "additional_condition": additional_condition.id if additional_condition else None, 
-                             "current_allergy" : current_allergy.id if current_allergy else None, 
-                             "additional_allergy" :  additional_allergy.id if additional_allergy else None, 
-                             "family_condition" : family_condition.id if family_condition else None,
-                             "ptient_id": patient_id,
+                             "current_allergy": current_allergy.id if current_allergy else None,
+                             "additional_allergy":  additional_allergy.id if additional_allergy else None,
+                             "family_condition": family_condition.id if family_condition else None,
+                             "patient_id": patient_id,
                              "created": True}
             logger.info(f"Added Successfully in DB: {response_data}")
             return response_data
         except Exception as e:
             logger.error(f"Error creating condition: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to update Condition and Allergy", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to update allergy and condition",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
 
@@ -174,16 +194,21 @@ class ConditionClient:
             )
             logger.info(f"Allergy List: {allergy_list}")
             if not allergy_list:
-                return Response(status_code=404, content="Allergy not found")
+                return JSONResponse(status_code=404, content="Allergy not found")
             return {
                 "allergy_list": allergy_list.json()
             }
         except Exception as e:
             logger.error(f"Unable to get allergy list: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: No Allergy data found for the {allergy_name}",
-                status_code=status.HTTP_400_BAD_REQUEST,
+            error_response_data = {
+                "error": "No allergy found for allergy",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
         
