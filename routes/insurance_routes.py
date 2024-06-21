@@ -27,7 +27,7 @@ async def get_insurance_by_patient_id(patient_id: str, request: Request):
     return CoverageClient.get_coverage_by_patient_id(patient_id)
 
 
-@router.put('/insurance/{insurance_id}')
+@router.put('/insurance/{patient_id}/{insurance_id}')
 @permission_required("INSURANCE", "UPDATE")
 async def update_insurance(patient_id: str, insurance_id: str, updated_insurance: CoverageUpdateModel, request: Request):
     logger.info(f"Request Patient_id: {patient_id}")
