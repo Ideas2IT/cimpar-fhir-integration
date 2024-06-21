@@ -16,6 +16,12 @@ class TokenModel(BaseModel):
     password: str
 
 
+class RotateToken(BaseModel):
+    client_id: str = Field(default="cimpar-client-jwt", exclude=True)
+    grant_type: str = Field(default="refresh_token", exclude=True)
+    refresh_token: str
+
+
 class User(DomainResource):
     email: str
     password: str

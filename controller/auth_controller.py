@@ -4,7 +4,7 @@ import traceback
 from aidbox.base import API
 
 from models.auth_validation import (
-    UserModel, TokenModel,
+    UserModel, TokenModel, RotateToken,
     User, AccessPolicy, CimparRole, CimparPermission
 )
 from services.aidbox_service import AidboxApi
@@ -53,10 +53,10 @@ class AuthClient:
     def create_token(token: TokenModel):
         try:
             resp = None
-            logger.info("Creating the access token: %s" % token)
-            res = API.make_request(method="GET", endpoint=f"/User?.email={token.username}", json=token.__dict__)
-            if res.json()["total"] == 0:
-                raise Exception("Given User Not Exist %s" % token.username)
+            # logger.info("Creating the access token: %s" % token)
+            # res = API.make_request(method="GET", endpoint=f"/User?.email={token.username}", json=token.__dict__)
+            # if res.json()["total"] == 0:
+            #     raise Exception("Given User Not Exist %s" % token.username)
             response = AidboxApi.open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
             response.raise_for_status()
             if response.status_code != 200:
@@ -65,8 +65,13 @@ class AuthClient:
                     detail="Incorrect username or password",
                     headers={"WWW-Authenticate": "Bearer"},
                 )
-            access_token = response.json()["access_token"]
-            user_id = res.json()["entry"][0]["resource"]["id"]
+            resp = response.json()
+            user_id = resp.get("userinfo", {}).get("id")
+            if not user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User ID not available"
+                )
             permission_id = generate_permission_id(user_id)
             perm_res = API.make_request(method="GET", endpoint=f"/CimparPermission/{permission_id}")
             if perm_res.status_code != 200:
@@ -74,11 +79,39 @@ class AuthClient:
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="User Permission not available"
                 )
-            role_name = perm_res.json()["cimpar_role"]["id"]
-            return {"access_token": access_token, "role": role_name}
+            resp["role"] = perm_res.json()["cimpar_role"]["id"]
+            return resp
         except Exception as e:
             logger.error(f"Unable to create a token: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(content=str(e),
-                            status_code=status.HTTP_400_BAD_REQUEST)
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Check the username and password, unable to login"
+            )
+
+    @staticmethod
+    def rotate_token(token: RotateToken):
+        response = AidboxApi.open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
+        response.raise_for_status()
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        resp = response.json()
+        return resp
+
+    @staticmethod
+    def logout():
+        response = AidboxApi.make_request(method="DELETE", endpoint="/Session")
+        response.raise_for_status()
+        if response.status_code != 200:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        resp = response.json()
+        return resp
 
