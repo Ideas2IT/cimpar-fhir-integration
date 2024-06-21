@@ -3,7 +3,6 @@ import traceback
 from fastapi import status
 from fastapi.responses import JSONResponse
 
-from aidbox.base import API
 from aidbox.base import CodeableConcept, Reference, Coding
 from aidbox.resource.condition import Condition
 from aidbox.resource.allergyintolerance import AllergyIntolerance
@@ -89,8 +88,8 @@ class ConditionClient:
     @staticmethod
     def get_condition_by_patient_id(patient_id: str):
         try:
-            response_condition = API.make_request(method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}")
-            response_allergy = API.make_request(method="GET", endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
+            response_condition = Condition.make_request(method="GET", endpoint=f"/fhir/Condition/?subject=Patient/{patient_id}")
+            response_allergy = AllergyIntolerance.make_request(method="GET", endpoint=f"/fhir/AllergyIntolerance/?patient=Patient/{patient_id}")
 
             if not response_condition or not response_allergy:
                 return [None, None]
