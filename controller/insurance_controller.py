@@ -16,7 +16,7 @@ class CoverageClient:
     @staticmethod
     def create_coverage(coverage: CoverageModel):
         try:
-            response_coverage = Coverage.make_request(method="GET", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
+            response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{coverage.beneficiary_id}")
             existing_coverages = response_coverage.json() if response_coverage else {}
 
             patient_id_occurrences = sum(1 for entry in existing_coverages.get('entry', []) if entry['resource']['beneficiary']['reference'] == f"Patient/{coverage.beneficiary_id}")
@@ -68,13 +68,13 @@ class CoverageClient:
             )
         
     @staticmethod
-    def update_by_patient_id(patient_id: str, updated_coverage: CoverageUpdateModel):
+    def update_by_patient_id(patient_id: str, insurance_id: str,updated_coverage: CoverageUpdateModel):
         try:
 
             insurance_plan = Coverage(
-                id=updated_coverage.insurance_id,
+                id=insurance_id,
                 status=updated_coverage.status,
-                beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{updated_coverage.beneficiary_id}"),
+                beneficiary=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 subscriberId=updated_coverage.policy_number,
                 payor=[Reference(display=updated_coverage.provider_name)],
                 class_=[
