@@ -1,4 +1,5 @@
 from fastapi import Response, status
+from fastapi.responses import JSONResponse
 import logging
 import traceback
 import requests
@@ -28,13 +29,20 @@ class HL7ImmunizationClient:
         except Exception as e:
             logger.error(f"Unable to create a Immunization: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(content=response_data, status_code=status.HTTP_400_BAD_REQUEST)
-        
+            error_response_data = {
+                "error": "Unable to create Immunization",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
     @staticmethod
     def get_immunizations_by_patient_id(patient_id: str):
         try:
             response_immunization = Immunization.make_request(method="GET", endpoint=f"/fhir/Immunization/?patient=Patient/{patient_id}")
-
             if not response_immunization:
                 return Response(status_code=404, content="Immunizations not found")
             immunizations = response_immunization.json() if response_immunization.status_code == 200 else []
@@ -42,8 +50,14 @@ class HL7ImmunizationClient:
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: No Immunization data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve Immunization",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -56,8 +70,14 @@ class HL7ImmunizationClient:
         except Exception as e:
             logger.error(f"Unable to get immunization data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content="Error: No Immunization data found", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve Immunizations",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     

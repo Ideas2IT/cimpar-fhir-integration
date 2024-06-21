@@ -1,6 +1,7 @@
 from fastapi import Response, status
 import logging
 import traceback
+from fastapi.responses import JSONResponse
 
 from aidbox.base import Reference, CodeableConcept, Coding
 from aidbox.resource.coverage import Coverage_Class
@@ -35,8 +36,8 @@ class CoverageClient:
                 payor=[Reference(display=coverage.provider_name)],
                 class_=[
                     Coverage_Class(
-                    type=CodeableConcept(coding=[Coding(system=GROUP_SYSTEM, code=GROUP_CODE)]),
-                    value=coverage.group_number,
+                        type=CodeableConcept(coding=[Coding(system=GROUP_SYSTEM, code=GROUP_CODE)]),
+                        value=coverage.group_number,
                 )],
                 order=coverage.insurance_type
             )
@@ -47,8 +48,14 @@ class CoverageClient:
         except Exception as e:
             logger.error(f"Unable to create a insurance_plan: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to Creating Insurance", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to create Insurance",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -64,8 +71,14 @@ class CoverageClient:
         except Exception as e:
             logger.error(f"Unable to get coverage data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: No Coverage data found for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to retrieve Insurance",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
         
     @staticmethod
@@ -93,19 +106,37 @@ class CoverageClient:
         except Exception as e:
             logger.error(f"Unable to update coverage data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to update coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to update Insurance",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
-    def delete_by_patient_id(patient_id: str):
+    def delete_by_patient_id(patient_id: str, insurance_id: str):
         try:
-            response_coverage = Coverage.make_request(method = "DELETE", endpoint= f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            response_coverage = Coverage.make_request(method="GET", endpoint=f"/fhir/Coverage/?beneficiary=Patient/{patient_id}")
+            existing_coverage = response_coverage.json() if response_coverage else {}
+            for item in existing_coverage["entry"]:
+                if item['resource']['id'] == insurance_id:
+                    delete_data = Coverage(**item["resource"])
+                    delete_data.delete()
+
             return {"deleted": True, "patient_id": patient_id}
         except Exception as e:
             logger.error(f"Unable to delete coverage data: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(
-                content=f"Error: Unable to delete coverage data for the {patient_id}", status_code=status.HTTP_400_BAD_REQUEST
+            error_response_data = {
+                "error": "Unable to delete Insurance",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
