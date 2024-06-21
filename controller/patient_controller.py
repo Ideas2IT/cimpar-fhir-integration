@@ -268,3 +268,4 @@ class PatientClient:
 
         return extracted_data
 
+
