@@ -3,12 +3,16 @@ from fastapi.responses import JSONResponse
 import logging
 import traceback
 from aidbox.base import API
+from datetime import datetime, timedelta, timezone
+import uuid
+import os
+
 
 from models.auth_validation import (
-    UserModel, TokenModel, RotateToken, User, AccessPolicy, CimparRole, CimparPermission, ChangePassword
+    UserModel, TokenModel, RotateToken, User, AccessPolicy, CimparRole, CimparPermission, ChangePassword, UserToken
 )
 from services.aidbox_service import AidboxApi
-from utils.common_utils import generate_permission_id
+from utils.common_utils import generate_permission_id, send_email
 
 logger = logging.getLogger("log")
 
@@ -28,14 +32,11 @@ class AuthClient:
                 raise Exception("User Already Exist %s" % user.email)
             if len(cimpar_role) < 0:
                 raise Exception("Unable to fetch the roles.")
-            create_user = User(id=user_id, email=user.email, password=user.password)
+            user_existing = API.make_request(method="GET", endpoint=f"/User/?.email={user.email}")
+            if user_existing.json()["total"] != 0:
+                raise Exception("Given User Already Exist %s" % user.email)
+            create_user = User(id=user_id, email=user.email, inactive=True)
             create_user.save()
-            # Create access policy in Aidbox
-            access_policy = AccessPolicy(
-                engine="allow",
-                link=[{"resourceType": "User", "id": user_id}]
-            )
-            access_policy.save()
             # Create Permission
             role_response = CimparPermission(
                 id=generate_permission_id(user_id),
@@ -43,11 +44,83 @@ class AuthClient:
                 cimpar_role={"resourceType": "CimparRole", "id": user.role}
             )
             role_response.save()
-            return {"id": user_id, "email": user.email}
+            # Create User Token to set the password
+            token = uuid.uuid4()
+            confirm_url = f"{os.getenv('BASE_SERVER_URL', '')}/confirm/{token}"
+            user_token = UserToken(
+                user_id=user_id,
+                token=str(token),
+                token_expiration=(datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() + 'Z',
+                confirm_url=confirm_url
+            )
+            user_token.save()
+            email_body = f"Click this link to confirm your email address: {confirm_url}"
+            # Email send
+            # if not send_email(user.email, email_body):
+            #     raise HTTPException(status_code=500, detail="Failed to send confirmation email")
+            return {
+                "id": user_id,
+                "email": user.email,
+                "confirm_url": confirm_url,
+                "message": "Signup successful! Check your email to set your password."
+            }
         except Exception as e:
             logger.error(f"Unable to create a user: {str(e)}")
             logger.error(traceback.format_exc())
-            return Response(content=str(e), status_code=status.HTTP_400_BAD_REQUEST)
+            error_response_data = {
+                "error": "Unable to delete patient",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
+
+    @staticmethod
+    def confirm_email(token: str, password: str):
+        try:
+            # Retrieve token from Aidbox
+            response = API.make_request(method="GET", endpoint=f"/UserToken/?.token={token}")
+            response.raise_for_status()
+            token_entry = response.json()['entry'][0]['resource'] if response.json()['entry'] else None
+
+            if not token_entry or datetime.fromisoformat(token_entry['token_expiration'][:-1]) < datetime.now(timezone.utc):
+                raise Exception("The confirmation link is invalid or has expired.")
+
+            user_id = token_entry['user_id']
+
+            # Update user password in Aidbox
+            user_update_data = {
+                "password": password,
+                "inactive": False
+            }
+            response = API.make_request(method="PATCH", endpoint=f"/User/{user_id}", json=user_update_data)
+            response.raise_for_status()
+
+            # Create access policy in Aidbox to grant permission to AIDBOX resources
+            access_policy = AccessPolicy(
+                engine="allow",
+                link=[{"resourceType": "User", "id": user_id}]
+            )
+            access_policy.save()
+
+            # Delete the token from Aidbox
+            response = API.make_request(method="DELETE", endpoint=f"/UserToken/{token_entry['id']}")
+            response.raise_for_status()
+
+            return {"message": "Your email has been confirmed and password has been set successfully!"}
+
+        except Exception as e:
+            logger.error(f"Unable to confirm a token: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to confirm a token",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
+            )
 
     @staticmethod
     def create_token(token: TokenModel):
@@ -84,23 +157,39 @@ class AuthClient:
         except Exception as e:
             logger.error(f"Unable to create a token: {str(e)}")
             logger.error(traceback.format_exc())
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Check the username and password, unable to login"
+            error_response_data = {
+                "error": "Unable to create a token",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
 
     @staticmethod
     def rotate_token(token: RotateToken):
-        response = AidboxApi.open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
-        response.raise_for_status()
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
+        try:
+            response = AidboxApi.open_request(method="POST", endpoint="/auth/token", json=token.__dict__)
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            resp = response.json()
+            return resp
+        except Exception as e:
+            logger.error(f"Unable to Refresh a token: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to Refresh a token",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
-        resp = response.json()
-        return resp
 
     @staticmethod
     def change_password(change: ChangePassword):
@@ -131,14 +220,26 @@ class AuthClient:
 
     @staticmethod
     def logout():
-        response = AidboxApi.make_request(method="DELETE", endpoint="/Session")
-        response.raise_for_status()
-        if response.status_code != 200:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
+        try:
+            response = AidboxApi.make_request(method="DELETE", endpoint="/Session")
+            response.raise_for_status()
+            if response.status_code != 200:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Incorrect username or password",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            resp = response.json()
+            return resp
+        except Exception as e:
+            logger.error(f"Unable to delete the session: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to delete the session",
+                "details": str(e),
+            }
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST
             )
-        resp = response.json()
-        return resp
 

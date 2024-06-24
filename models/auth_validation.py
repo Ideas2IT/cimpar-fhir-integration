@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from aidbox.base import DomainResource, BackboneElement
+from aidbox.base import DomainResource
 
 
 class UserModel(BaseModel):
@@ -32,7 +32,7 @@ class RotateToken(BaseModel):
 
 class User(DomainResource):
     email: str
-    password: str
+    inactive: bool
 
 
 class AccessPolicy(DomainResource):
@@ -61,3 +61,8 @@ class CimparPermission(DomainResource):
     user_id: dict
     cimpar_role: dict
 
+
+class UserToken(DomainResource):
+    user_id: str
+    token: str
+    token_expiration: str

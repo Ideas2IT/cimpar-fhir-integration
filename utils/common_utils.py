@@ -6,6 +6,7 @@ import requests
 import os
 from functools import wraps
 from fastapi import HTTPException, Request
+from azure.communication.email import EmailClient
 
 from HL7v2 import get_md5
 
@@ -96,6 +97,32 @@ def permission_required(resource: str, action: str):
             return await func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+def send_email(recipient_email, body):
+    try:
+        SENDER_EMAIL_ADDRESS = "DoNotReply@22ed3f1f-75c9-4d5a-9601-788742ad3bf5.azurecomm.net"
+        AZURE_COMMUNICATION_CONNECTION_STRING = "your_connection_string"
+        email_client = EmailClient.from_connection_string(AZURE_COMMUNICATION_CONNECTION_STRING)
+        message = {
+            "senderAddress": SENDER_EMAIL_ADDRESS,
+            "recipients":  {
+                "to": [{"address": recipient_email}],
+            },
+            "content": {
+                "subject": "Confirm your email address",
+                "plainText": body,
+            }
+        }
+
+        poller = email_client.begin_send(message)
+        result = poller.result()
+
+        return True  # Email sent successfully
+
+    except Exception as e:
+        print(f"Failed to send email: {str(e)}")
+        return False
 
 
 def generate_permission_id(user_id):
