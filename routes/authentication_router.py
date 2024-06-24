@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Form
 import logging
 
 from models.auth_validation import UserModel, TokenModel, RotateToken, ChangePassword
@@ -13,6 +13,14 @@ logger = logging.getLogger("log")
 async def create_account(user_plan: UserModel):
     logger.info("Request Payload: %s" % user_plan)
     response = AuthClient.create(user_plan)
+    logger.info("Response: %s" % response)
+    return response
+
+
+@router.post("/confirm/{token}")
+async def confirm_account(token: str, password: str = Form(...)):
+    logger.info("Request Payload: %s" % token)
+    response = AuthClient.confirm_email(token, password)
     logger.info("Response: %s" % response)
     return response
 
