@@ -1,11 +1,11 @@
 from fastapi import Response, status, HTTPException
+from fastapi.responses import JSONResponse
 import logging
 import traceback
 from aidbox.base import API
 
 from models.auth_validation import (
-    UserModel, TokenModel, RotateToken,
-    User, AccessPolicy, CimparRole, CimparPermission
+    UserModel, TokenModel, RotateToken, User, AccessPolicy, CimparRole, CimparPermission, ChangePassword
 )
 from services.aidbox_service import AidboxApi
 from utils.common_utils import generate_permission_id
@@ -101,6 +101,33 @@ class AuthClient:
             )
         resp = response.json()
         return resp
+
+    @staticmethod
+    def change_password(change: ChangePassword):
+        try:
+            token = TokenModel(username=change.username, password=change.old_password,
+                               client_id=change.client_id, grant_type=change.grant_type)
+            resp = AuthClient.create_token(token)
+            user_email = resp.get("userinfo", {}).get("email")
+            user_id = resp.get("userinfo", {}).get("id")
+            if not user_email:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Username or password is incorrect."
+                )
+            password_data = {
+                "password": change.new_password,
+            }
+            response = API.make_request(method="PATCH", endpoint=f"/User/{user_id}", json=password_data)
+            response.raise_for_status()
+            return {"message": "Password updated successfully"}
+        except Exception as e:
+            logger.error(f"Unable to change the password: {str(e)}")
+            logger.error(traceback.format_exc())
+            return JSONResponse(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                content=f"Unable to change the password: {str(e)}"
+            )
 
     @staticmethod
     def logout():

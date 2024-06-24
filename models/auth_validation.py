@@ -16,6 +16,14 @@ class TokenModel(BaseModel):
     password: str
 
 
+class ChangePassword(BaseModel):
+    client_id: str = Field(default="cimpar-client-jwt", exclude=True)
+    grant_type: str = Field(default="password", exclude=True)
+    username: str
+    old_password: str
+    new_password: str
+
+
 class RotateToken(BaseModel):
     client_id: str = Field(default="cimpar-client-jwt", exclude=True)
     grant_type: str = Field(default="refresh_token", exclude=True)

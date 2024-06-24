@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 import logging
 
-from models.auth_validation import UserModel, TokenModel, RotateToken
+from models.auth_validation import UserModel, TokenModel, RotateToken, ChangePassword
 from controller.auth_controller import AuthClient
 from utils.common_utils import bearer_token
 
@@ -21,6 +21,14 @@ async def create_account(user_plan: UserModel):
 async def create_token(token: TokenModel):
     logger.info("Request Payload: %s" % token)
     response = AuthClient.create_token(token)
+    logger.info("Response: %s" % response)
+    return response
+
+
+@router.post('/change_password')
+async def change_password(change: ChangePassword):
+    logger.info("Request Payload: %s" % change)
+    response = AuthClient.change_password(change)
     logger.info("Response: %s" % response)
     return response
 
