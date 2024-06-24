@@ -20,7 +20,7 @@ async def insurance_route(ins_plan: CoverageModel, request: Request):
     return response
 
 
-@router.get('/insurance/{patient_id}')
+@router.get('/insurance/{patient_id}/{insurance_id}')
 @permission_required("INSURANCE", "READ")
 async def get_insurance_by_patient_id(patient_id: str, request: Request):
     logger.info(f"Request Patient_id: {patient_id}")

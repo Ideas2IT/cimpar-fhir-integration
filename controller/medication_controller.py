@@ -100,7 +100,7 @@ class MedicationClient:
             )
     
     @staticmethod
-    def update_medication_by_patient_id(med:MedicationUpdateModel):
+    def update_medication_by_patient_id(patient_id: str, med:MedicationUpdateModel):
         try:
             current_status = "active" if med.statement_approved == True else "unknown"
             history_status = "active" if med.request_approved == True else "unknown"
@@ -108,7 +108,7 @@ class MedicationClient:
             medication_request = MedicationRequest(  
                 id = med.request_id,    
                 medicationCodeableConcept=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in med.request]),            
-                subject=Reference(reference=f"{PATIENT_REFERENCE}/{med.patient_id}"),
+                subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 status=current_status,
                 intent=INTEND
             )
@@ -117,7 +117,7 @@ class MedicationClient:
             medication_statement = MedicationStatement(  
                 id = med.statement_id,    
                 medicationCodeableConcept=CodeableConcept(coding=[Coding(system=concept.system, code=concept.code, display=concept.display) for concept in med.statement]),
-                subject=Reference(reference=f"{PATIENT_REFERENCE}/{med.patient_id}"),
+                subject=Reference(reference=f"{PATIENT_REFERENCE}/{patient_id}"),
                 status=history_status,
             )
 

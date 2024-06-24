@@ -120,15 +120,30 @@ class EncounterClient:
             )
 
     @staticmethod
-    def delete_by_patient_id(patient_id: str):
+    def delete_by_patient_id(patient_id: str, encounter_id: str):
         try:
-            encounter = Encounter.make_request(method="DELETE", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
-            return {"deleted": True, "encounter": encounter.id}
+            encounter = Encounter.make_request(method="GET", endpoint= f"/fhir/Encounter/?subject=Patient/{patient_id}")
+            existing_encounter = encounter.json() if encounter else {}
+            if existing_encounter.get("total", 0) > 0:
+                for item in existing_encounter["entry"]:
+                    if item['resource']['id'] == encounter_id:
+                        delete_data = Encounter(**item["resource"])
+                        delete_data.delete()
+                return {"deleted": True, "encounter": encounter.json()}
+            else:
+                error_response_data = {
+                    "error": "No visit history for this patient",
+                    "details": str(e),
+                }
+                return JSONResponse(
+                    content=error_response_data,
+                    status_code=status.HTTP_400_BAD_REQUEST
+                )
         except Exception as e:
             logger.error(f"Unable to delete encounter: {str(e)}")
             logger.error(traceback.format_exc())
             error_response_data = {
-                "error": "Unable to update visit history",
+                "error": "Unable to delete visit history",
                 "details": str(e),
             }
 
