@@ -25,6 +25,14 @@ async def confirm_account(token: str, password: str = Form(...)):
     return response
 
 
+@router.post("/reset/{email}")
+async def reset_password(email: str):
+    logger.info("Request Payload: %s" % email)
+    response = AuthClient.reset_password(email)
+    logger.info("Response: %s" % response)
+    return response
+
+
 @router.post('/login')
 async def create_token(token: TokenModel):
     logger.info("Request Payload: %s" % token)

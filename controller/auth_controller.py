@@ -5,7 +5,6 @@ import traceback
 from aidbox.base import API
 from datetime import datetime, timedelta, timezone
 import uuid
-import os
 
 
 from models.auth_validation import (
@@ -46,7 +45,7 @@ class AuthClient:
             role_response.save()
             # Create User Token to set the password
             token = uuid.uuid4()
-            confirm_url = f"{os.getenv('BASE_SERVER_URL', '')}/confirm/{token}"
+            confirm_url = f"/api/confirm/{token}"
             user_token = UserToken(
                 user_id=user_id,
                 token=str(token),
@@ -56,8 +55,8 @@ class AuthClient:
             user_token.save()
             email_body = f"Click this link to confirm your email address: {confirm_url}"
             # Email send
-            # if not send_email(user.email, email_body):
-            #     raise HTTPException(status_code=500, detail="Failed to send confirmation email")
+            if not send_email(user.email, email_body):
+                raise Exception("Failed to send confirmation email")
             return {
                 "id": user_id,
                 "email": user.email,
@@ -215,8 +214,63 @@ class AuthClient:
             logger.error(traceback.format_exc())
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content=f"Unable to change the password: {str(e)}"
+                content=f"Unable to change the password: {str(e)}")
+
+    @staticmethod
+    def reset_password(email):
+        try:
+            # Verify if the user exists
+            user = API.make_request(method="GET", endpoint=f"/User/?.email={email}")
+            if user.json()["total"] == 0:
+                raise Exception("User not found")
+            user_json = user.json()["entry"][0]["resource"]
+            # Check if 24 hours have passed since the last password update
+            last_update = datetime.fromisoformat(user_json['meta']['lastUpdated'][:-1]).replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) - last_update < timedelta(hours=24):
+                raise Exception("Password reset can only be requested 24 hours after the last user update/change")
+            # Check for existing valid reset token
+            token_response = API.make_request(method="GET", endpoint=f"/UserToken/?.user_id={user_json["id"]}")
+            if token_response.json()["total"] != 0:
+                token_entry = token_response.json()["entry"][0]["resource"]
+                token_expiration = datetime.fromisoformat(token_entry['token_expiration'][:-1]).replace(
+                    tzinfo=timezone.utc)
+                if token_expiration > datetime.now(timezone.utc):
+                    raise Exception("A password reset link has already been sent and is still valid. "
+                                    "Please check your email.")
+                # Delete the expired token
+                API.make_request(method="DELETE", endpoint=f"/UserToken/{token_entry['id']}")
+            # Create a reset token
+            token = uuid.uuid4()
+            reset_url = f"/api/confirm/{token}"
+            token_expiration = (datetime.now(timezone.utc) + timedelta(hours=48)).isoformat() + 'Z'
+            user_token = UserToken(
+                user_id=user_json["id"],
+                token=str(token),
+                token_expiration=token_expiration,
+                confirm_url=reset_url
             )
+            user_token.save()
+            # Send reset email
+            email_body = f"Click this link to reset your password: {reset_url}"
+            if not send_email(email, email_body):
+                raise Exception("Failed to send password reset email")
+
+            return {
+                "message": "Password reset email sent",
+                "confirm_url": reset_url
+            }
+
+        except Exception as e:
+            logger.error(f"Unable to request password reset: {str(e)}")
+            logger.error(traceback.format_exc())
+            error_response_data = {
+                "error": "Unable to request password reset",
+                "details": str(e),
+            }
+
+            return JSONResponse(
+                content=error_response_data,
+                status_code=status.HTTP_400_BAD_REQUEST)
 
     @staticmethod
     def logout():
