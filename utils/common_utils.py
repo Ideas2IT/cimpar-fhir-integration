@@ -17,6 +17,10 @@ user_id_context = contextvars.ContextVar('user_id')
 base = os.environ.get("AIDBOX_URL")
 
 
+AZURE_COMMUNICATION_CONNECTION_STRING = os.environ.get("AZURE_COMMUNICATION_CONNECTION_STRING")
+SENDER_EMAIL_ADDRESS = os.environ.get("SENDER_EMAIL_ADDRESS")
+
+
 def decode_jwt_without_verification(token):
     # JWTs are split into three parts: header, payload, and signature
     parts = token.split('.')
@@ -101,8 +105,6 @@ def permission_required(resource: str, action: str):
 
 def send_email(recipient_email, body):
     try:
-        SENDER_EMAIL_ADDRESS = "DoNotReply@22ed3f1f-75c9-4d5a-9601-788742ad3bf5.azurecomm.net"
-        AZURE_COMMUNICATION_CONNECTION_STRING = "your_connection_string"
         email_client = EmailClient.from_connection_string(AZURE_COMMUNICATION_CONNECTION_STRING)
         message = {
             "senderAddress": SENDER_EMAIL_ADDRESS,
@@ -114,14 +116,12 @@ def send_email(recipient_email, body):
                 "plainText": body,
             }
         }
-
         poller = email_client.begin_send(message)
         result = poller.result()
-
+        logger.info("Email result: %s" % result)
         return True  # Email sent successfully
-
     except Exception as e:
-        print(f"Failed to send email: {str(e)}")
+        logger.error(f"Failed to send email: {str(e)}")
         return False
 
 
